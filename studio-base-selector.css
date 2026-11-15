@@ -1,0 +1,19 @@
+/* Keep the arrangement source visible without displacing the research board. */
+.studio-modal>.studio-strategy-fields{grid-template-columns:minmax(0,1fr) minmax(190px,.8fr) 120px;gap:12px;margin-bottom:5px}
+.studio-strategy-fields .field{min-width:0}
+.studio-base-guide{margin:0 0 10px;color:#5b7063;font-size:11px;line-height:1.65}
+.studio-base-guide>summary{cursor:pointer;font-weight:600;min-height:18px}
+.studio-base-guide>p{margin:5px 0 0;max-width:90ch}
+.studio-base-guide .studio-base-note{font-size:10px;color:#7b806a}
+@media(max-width:760px){
+ .studio-modal>.studio-strategy-fields{grid-template-columns:minmax(0,1fr) 105px;gap:7px 9px;margin-bottom:5px}
+ .studio-strategy-fields .studio-name-field{grid-column:1/-1}
+ .studio-strategy-fields .studio-base-field{grid-column:1}
+ .studio-strategy-fields .studio-side-field{grid-column:2}
+ .studio-strategy-fields .field>span{font-size:11px}
+ .studio-base-guide{font-size:11px;margin-bottom:8px}
+}
+@media(max-width:350px){
+ .studio-modal>.studio-strategy-fields{grid-template-columns:minmax(0,1fr) 94px;gap:6px}
+ .studio-strategy-fields .field select{padding-left:7px;padding-right:22px}
+}

@@ -41,6 +41,7 @@ export function mountStudyBoard(host,{onChange=()=>{},onStatus=()=>{}}={}){
   setLine(sfen,moves,{keepFuture=false,side=0}={}){const next=studyLine(sfen,moves);if(keepFuture&&line&&next.initialSfen===line.initialSfen&&next.moves.join(' ')===line.moves.join(' '))next.future=[...line.future];line=next;flipped=side===1;enabled=true;resetSelection();render();},
   invalidate(){enabled=false;resetSelection();render();},
   append(usi){apply(usi);},
+  hasPendingChoice(){return Boolean(promotion||pendingBranch);},
   getLine(){return line?{...line,moves:[...line.moves],future:[...line.future]}:null;}
  };
 }

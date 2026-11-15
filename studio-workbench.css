@@ -25,9 +25,9 @@
  .studio-quick-ai strong{font-size:.73rem;line-height:1.4}.studio-quick-ai small{font-size:.6rem;margin-top:1px}
  .studio-quick-ai .button{min-height:30px;padding:4px 7px}
  .study-hands{min-height:30px;padding:3px 0}
- .study-board-wrap{width:min(100%,max(280px,calc(100dvh - 490px)));padding:4px}
- .study-piece{font-size:clamp(18px,calc((100dvh - 490px)/19),29px)}
- .study-piece.is-multi{font-size:clamp(12px,calc((100dvh - 490px)/28),20px)}
+ .study-board-wrap{width:min(100%,max(280px,calc(100dvh - 510px)));padding:4px}
+ .study-piece{font-size:clamp(18px,calc((100dvh - 510px)/19),29px)}
+ .study-piece.is-multi{font-size:clamp(12px,calc((100dvh - 510px)/28),20px)}
  .study-toolbar{gap:6px}.study-toolbar .button{min-height:33px;padding:6px;font-size:.75rem}
  .study-position-note{font-size:.69rem;line-height:1.5;margin:5px 0}
  .studio-workspace .studio-analysis-results{max-height:max(240px,calc(100dvh - 370px))}
@@ -35,3 +35,7 @@
  .studio-workspace .studio-ai>.studio-help{margin:4px 0;font-size:10px;line-height:1.5}
  .studio-workspace .studio-ai h3{font-size:17px;margin-bottom:7px}
 }
+
+/* A single explicit AI move is available directly beside the research board. */
+.studio-quick-actions{display:flex;flex-wrap:wrap;gap:6px;flex:0 0 auto;align-items:center}.studio-quick-actions #studio-ai-move{min-width:112px}.studio-quick-actions #studio-ai-move[aria-busy="true"]{min-width:148px}.studio-quick-actions .button{white-space:nowrap}
+@media(max-width:760px){.studio-quick-ai{display:block}.studio-quick-actions{margin-top:7px}.studio-quick-actions #studio-ai-move{flex:1;min-height:38px}.studio-quick-actions #studio-quick-action{min-height:38px}}
