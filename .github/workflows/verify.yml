@@ -22,6 +22,8 @@ jobs:
           node --check strategy-events.js
           node --check custom-strategies.js
           node --check strategy-studio.js
+          node --check studio-workbench.js
+          node --check mobile-controls.js
           node --check narration.js
           node --check engine-vendor/core-worker.js
           node --check engine-vendor/engine-worker.js

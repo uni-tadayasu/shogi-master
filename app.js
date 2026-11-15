@@ -8,6 +8,7 @@ import {createNarrator,moveNarration,evaluationNarration} from './narration.js';
 import {mountStrategyStudio} from './strategy-studio.js';
 import {getPlanGuide} from './custom-strategies.js';
 import {strategyTransition,appendStrategyEvent} from './strategy-events.js';
+import {mountMobileControls} from './mobile-controls.js';
 
 const $=id=>document.getElementById(id);
 const STORAGE='shogi-meijin-v1';
@@ -15,7 +16,7 @@ const labels={P:'歩',L:'香',N:'桂',S:'銀',G:'金',B:'角',R:'飛',K:'玉','+
 const sideName=n=>n===0?'先手':'後手';
 const defaultHash=defaultHashMB({deviceMemory:navigator.deviceMemory,isMobile:matchMedia('(max-width:700px)').matches});
 let settings={side:0,strategy:'auto',castle:'auto',adaptive:true,hints:true,confirm:false,mode:'study',time:1000,multiPV:1,hashMB:defaultHash,voiceURI:'',speechRate:1};
-let narrator=null,studio=null,strategyEvents=[],lastPlan=null,activeMultiPV=1,analysisStarted=0;
+let narrator=null,studio=null,studioOpen=false,strategyEvents=[],lastPlan=null,activeMultiPV=1,analysisStarted=0;
 let positionRevision=0,lastNarratedEvaluation=null;
 let branches=[],currentEvaluation=null,pendingRequested=null;
 let states=[initialState()],moves=[],cursor=0,flipped=false,selected=null,legal=[],candidates=[],selectedCandidate=0;
@@ -117,6 +118,7 @@ function renderHistory(){const el=$('history-list');el.replaceChildren();if(!cur
 }
 function goTo(index){clearTimeout(autoTimer);narrator?.stop();cursor=Math.max(0,Math.min(moves.length,index));selected=null;persist();refreshPosition('history');}
 function startAnalysis(timeOverride){
+ if(studioOpen)return;
  const config=normalizeEngineConfig({timeMs:timeOverride||settings.time,multiPV:settings.multiPV,hashMB:settings.hashMB});activeMultiPV=config.multiPV;analysisStarted=performance.now();document.body.dataset.engineProfile=activeMultiPV===1?'focused':'compare';
  clearTimeout(autoTimer);requestId++;candidates=[];analysisBatches=new Map();latestCandidates=[];boundedCandidates=new Map();exactCandidates=new Map();selectedCandidate=0;thinking=false;
  const result=gameResult();$('eval-label').textContent=result.over?resultText(result):'解析中';$('eval-score').textContent='—';$('eval-detail').textContent='評価は先手基準 · ＋は先手有利';$('eval-bar').style.width='50%';$('pv-line').textContent='読み筋を解析しています…';$('analysis-detail').textContent='局面をエンジンに送信';$('apply-best-btn').disabled=true;
@@ -252,12 +254,14 @@ function bind(){
  $('catalog-btn')?.addEventListener('click',()=>{$('tools-dialog').close();renderCatalog();$('catalog-dialog').showModal();});$('close-catalog')?.addEventListener('click',()=>$('catalog-dialog').close());$('strategy-search')?.addEventListener('input',renderCatalog);$('castle-select')?.addEventListener('change',e=>{settings.castle=e.target.value;persist();renderGuide();});
  document.addEventListener('keydown',e=>{if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)||document.querySelector('dialog[open]'))return;if(e.key==='ArrowLeft'){e.preventDefault();goTo(cursor-1);}if(e.key==='ArrowRight'){e.preventDefault();goTo(cursor+1);}if(e.key==='Escape'){selected=null;renderBoard();}});
 }
-restore();initializeExtensions();bind();bindExtensions();createEngine();refreshPosition('initial');
+restore();initializeExtensions();bind();bindExtensions();mountMobileControls({openStudio:()=>studio.open()});createEngine();refreshPosition('initial');
 
 function initializeExtensions(){
  settings.analysisVersion=3;
  studio=mountStrategyStudio({
   getCurrent:()=>({initialSfen:toSFEN(states[0]),moves:moves.map(moveToUSI),cursor,side:settings.side,base:customSelection()?.base||settings.strategy}),
+  onOpen:()=>{studioOpen=true;clearTimeout(autoTimer);requestId++;thinking=false;narrator?.stop();worker?.terminate();worker=null;$('engine-status').classList.remove('thinking');$('engine-status').textContent='独自戦法を研究中';},
+  onClose:()=>{studioOpen=false;createEngine();startAnalysis();},
   onActivate:(record,plan)=>{
    const loaded=decodeGame(record);archiveRecord(makeRecord(states,moves,cursor),'独自戦法を適用する前');narrator?.stop();
    states=loaded.states;moves=loaded.moves;cursor=loaded.cursor;settings.side=plan.side;settings.strategy='custom:'+plan.id;settings.mode='study';flipped=settings.side===1;selected=null;
