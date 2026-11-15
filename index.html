@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#142636">
+  <meta name="description" content="将棋名人は、盤面から次の一手と形勢を分析する将棋AI研究室。先手・後手、戦法を選び、候補手と読み筋をひとつの画面で確認できます。PC・スマートフォン対応。">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="将棋名人 — 次の一手に、確信を。">
+  <meta property="og:description" content="AI解析・戦法選択・形勢判断。あなたの一手を深める、ブラウザ将棋研究室。">
+  <meta property="og:image" content="./assets/ogp.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <title>将棋名人 | 次の一手に、確信を。</title>
+  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg">
+  <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <svg class="icon-definitions" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="m12 3 2.2 6.8L21 12l-6.8 2.2L12 21l-2.2-6.8L3 12l6.8-2.2L12 3Z"/><path d="m20 2 .6 1.4L22 4l-1.4.6L20 6l-.6-1.4L18 4l1.4-.6Z"/></symbol>
+    <symbol id="i-board" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M3 6h7m4 0h7M3 12h13m4 0h1M3 18h3m4 0h11"/><path d="M10 3v6m6 0v6M6 15v6"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 3v17h17M7 14l4-5 4 3 6-8"/><path d="M17 4h4v4"/></symbol>
+    <symbol id="i-undo" viewBox="0 0 24 24"><path d="m8 4-5 5 5 5M3 9h11a6 6 0 0 1 0 12h-4"/></symbol>
+    <symbol id="i-flip" viewBox="0 0 24 24"><path d="M4 9a8 8 0 0 1 14-5l2 2m0-5v5h-5M20 15a8 8 0 0 1-14 5l-2-2m0 5v-5h5"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="m8 4 12 8-12 8V4Z"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7v.5"/></symbol>
+    <symbol id="i-import" viewBox="0 0 24 24"><path d="M4 15v5h16v-5M12 3v12m-5-5 5 5 5-5"/></symbol>
+    <symbol id="i-export" viewBox="0 0 24 24"><path d="M4 15v5h16v-5M12 15V3m-5 5 5-5 5 5"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></symbol>
+    <symbol id="i-chev-left" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></symbol>
+    <symbol id="i-chev-right" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+    <symbol id="i-last" viewBox="0 0 24 24"><path d="m6 5 7 7-7 7M18 5v14"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 5c-3-2-6-2-10-1v15c4-1 7-1 10 1 3-2 6-2 10-1V4c-4-1-7-1-10 1Zm0 0v15"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+  </defs></svg>
+
+  <header class="site-header">
+    <a class="brand" href="./" aria-label="将棋名人 ホーム">
+      <img src="./assets/brand-mark.svg" width="43" height="48" alt="">
+      <span class="brand-wordmark">将棋名人<span>SHOGI MEIJIN</span></span>
+    </a>
+    <div class="header-center"><span class="header-divider"></span><span>一手を磨く、あなたの将棋研究室。</span></div>
+    <div class="header-actions">
+      <span class="local-badge"><span class="status-dot"></span>ブラウザで解析</span>
+      <button type="button" class="icon-button" id="import-btn" aria-label="SFEN局面を読み込む" title="SFEN局面を読み込む"><svg class="icon"><use href="#i-import"/></svg></button>
+      <button type="button" class="icon-button" id="export-btn" aria-label="棋譜を書き出す" title="棋譜を書き出す"><svg class="icon"><use href="#i-export"/></svg></button>
+      <button type="button" class="icon-button" id="help-btn" aria-label="使い方・AIについて" title="使い方・AIについて"><svg class="icon"><use href="#i-info"/></svg></button>
+    </div>
+  </header>
+
+  <main class="page-shell">
+    <section class="page-intro" aria-label="将棋AI研究室">
+      <div><p class="eyebrow"><span></span> AI SHOGI STUDIO</p><h1>次の一手に、<em>確信を。</em></h1></div>
+      <div class="session-heading"><span class="live-mark"></span><span id="engine-status" role="status" aria-live="polite">AIを準備しています</span></div>
+    </section>
+
+    <div class="workspace">
+      <aside class="setup-panel panel" aria-label="対局の設定">
+        <div class="panel-heading"><h2><svg class="icon"><use href="#i-sliders"/></svg>対局を整える</h2><span class="section-no">01</span></div>
+        <div class="settings-grid">
+          <label class="field" for="side-select"><span>あなたの手番</span><select id="side-select"><option value="0">先手 ▲</option><option value="1">後手 △</option></select></label>
+          <label class="field" for="mode-select"><span>対局モード</span><select id="mode-select"><option value="study">研究・相手の手を入力</option><option value="play">AIと対局</option></select></label>
+          <label class="field" for="strategy-select"><span>目指す戦法</span><select id="strategy-select"><option value="auto">おまかせ・最善手優先</option><option value="ibisha">居飛車</option><option value="yagura">矢倉</option><option value="shiken">四間飛車</option><option value="sanken">三間飛車</option><option value="nakabisha">中飛車</option></select></label>
+          <label class="field" for="time-select"><span>1回の解析時間</span><select id="time-select"><option value="1000">クイック · 1秒</option><option value="3000" selected>バランス · 3秒</option><option value="8000">じっくり · 8秒</option></select></label>
+        </div>
+        <div class="strategy-note"><span class="small-icon"><svg class="icon"><use href="#i-book"/></svg></span><div><h3>戦法から、一手を考える。</h3><p>序盤の方針を選び、相手の指し手に合わせて局面を読み進めます。</p></div></div>
+        <button type="button" class="button button-outline new-game-button" id="new-game"><svg class="icon"><use href="#i-plus"/></svg>新しい対局</button>
+        <div class="setup-footer"><div class="privacy-mark"><span></span>棋譜は端末内に自動保存</div><p>駒を選択し、移動先をタップ。持ち駒も同じ操作で打てます。</p></div>
+      </aside>
+
+      <section class="board-panel" aria-label="将棋盤">
+        <div class="board-heading"><div class="board-title"><svg class="icon"><use href="#i-board"/></svg><h2>盤面</h2><span class="phase-badge" id="phase-label">序盤</span></div><span class="move-count"><b id="move-counter">0</b> 手目</span></div>
+        <div class="player-row player-row-top"><div class="player-identity"><span class="player-stone stone-white" id="sidebadge-top">△</span><span id="player-top">後手</span></div><div class="hand-host" id="hand-top"><div class="hand" id="hand-1" aria-label="後手の持ち駒"><span class="hand-empty">持ち駒なし</span></div></div></div>
+        <div class="board-outer">
+          <div class="file-coordinates" id="file-labels" aria-hidden="true"><span>9</span><span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span></div>
+          <div class="board-surface">
+            <div class="board-wrap" id="board-wrap">
+              <div class="board" id="board" role="grid" aria-label="将棋盤 9筋から1筋、一段から九段"></div>
+              <svg class="arrow-layer" id="arrow-layer" viewBox="0 0 900 900" aria-hidden="true"></svg>
+            </div>
+            <div class="rank-coordinates" id="rank-labels" aria-hidden="true"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>七</span><span>八</span><span>九</span></div>
+          </div>
+        </div>
+        <div class="player-row player-row-bottom"><div class="player-identity"><span class="player-stone stone-black" id="sidebadge-bottom">▲</span><span id="player-bottom">先手・あなた</span></div><div class="hand-host" id="hand-bottom"><div class="hand" id="hand-0" aria-label="先手の持ち駒"><span class="hand-empty">持ち駒なし</span></div></div></div>
+        <div class="board-toolbar"><span class="turn-indicator"><span></span><strong id="turn-label">先手の番です</strong></span><div class="board-tools"><button type="button" id="undo-btn" class="text-button" title="ひとつ前の手に戻る"><svg class="icon"><use href="#i-undo"/></svg><span>一手戻す</span></button><button type="button" id="flip-btn" class="text-button" title="盤面を反転"><svg class="icon"><use href="#i-flip"/></svg><span>反転</span></button></div></div>
+      </section>
+
+      <aside class="insight-panel" aria-label="AIの分析">
+        <section class="evaluation-panel">
+          <div class="evaluation-heading"><h2><svg class="icon"><use href="#i-chart"/></svg>形勢の目安</h2><span class="evaluation-tag">POSITION</span></div>
+          <div class="evaluation-main"><strong id="eval-label">互角の局面</strong><span id="eval-score">0</span></div>
+          <div class="evaluation-scale"><span>先手 ▲</span><span>△ 後手</span></div>
+          <div class="evaluation-track"><div id="eval-bar" style="width:50%"></div><span class="evaluation-midline"></span></div>
+          <p id="eval-detail" class="evaluation-detail">評価値は先手から見た形勢です</p>
+        </section>
+        <section class="recommendation-panel panel">
+          <div class="panel-heading"><h2><svg class="icon gold-icon"><use href="#i-spark"/></svg>AIの候補手</h2><span class="section-no">NEXT MOVE</span></div>
+          <div class="candidates" id="candidates" aria-live="polite"><div class="analysis-empty"><span class="thinking-orbit"></span><p>盤面を読み解いています</p></div></div>
+          <div class="reading-line"><span>読み筋</span><p id="pv-line">解析後に次の展開が表示されます</p></div>
+          <div class="analysis-meta" id="analysis-detail">局面の解析を準備中</div>
+          <div class="analysis-actions"><button type="button" class="button button-primary" id="apply-best-btn" disabled><svg class="icon"><use href="#i-play"/></svg><span>推奨手を指す</span></button><button type="button" class="button button-icon" id="analyze-btn" aria-label="もう一度AI解析" title="もう一度AI解析"><svg class="icon"><use href="#i-spark"/></svg></button></div>
+        </section>
+        <section class="advice-panel"><div class="advice-mark"><svg class="icon"><use href="#i-target"/></svg></div><div><h2>一手のヒント</h2><p id="advice-text">まずは角道を開けるか、飛車先の歩を進めて駒を働かせましょう。</p></div></section>
+        <section class="history-panel panel"><div class="panel-heading"><h2><svg class="icon"><use href="#i-clock"/></svg>指し手の記録</h2><div class="history-controls"><button type="button" id="history-prev" class="tiny-button" title="前の局面" aria-label="前の局面"><svg class="icon"><use href="#i-chev-left"/></svg></button><button type="button" id="history-next" class="tiny-button" title="次の局面" aria-label="次の局面"><svg class="icon"><use href="#i-chev-right"/></svg></button><button type="button" id="history-last" class="tiny-button" title="最新の局面" aria-label="最新の局面"><svg class="icon"><use href="#i-last"/></svg></button></div></div><div class="history-list" id="history-list"><p class="history-empty">あなたの一手から、研究がはじまります。</p></div></section>
+      </aside>
+    </div>
+    <footer class="site-footer"><span>SHOGI MEIJIN <i>—</i> 思考を深め、一手を磨く。</span><span>AIの評価は目安であり、勝利を保証するものではありません。</span></footer>
+  </main>
+
+  <dialog id="promotion-dialog" class="modal"><div class="dialog-emblem">成</div><h2>駒を成りますか？</h2><p>成ると駒の動きが変わります。</p><div class="dialog-actions"><button type="button" id="promo-no" class="button button-outline">成らない</button><button type="button" id="promo-yes" class="button button-primary">成る</button></div></dialog>
+  <dialog id="reset-dialog" class="modal"><h2>新しい対局を始めますか？</h2><p>現在の棋譜を残したい場合は、先に右上から書き出してください。</p><div class="dialog-actions"><button type="button" id="reset-cancel" class="button button-outline">キャンセル</button><button type="button" id="reset-confirm" class="button button-primary">初期局面に戻す</button></div></dialog>
+  <dialog id="import-dialog" class="modal modal-wide"><h2>局面を読み込む</h2><p>SFEN局面・USI position・保存したJSON棋譜を貼り付けるか、ファイルを選んでください。現在の棋譜は置き換わります。</p><label class="field" for="sfen-input"><span>SFEN / USI / JSON</span><textarea id="sfen-input" rows="4" spellcheck="false" placeholder="lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1"></textarea></label><p id="import-error" class="form-error" role="alert"></p><div class="dialog-actions"><button type="button" id="import-cancel" class="button button-outline">キャンセル</button><button type="button" id="import-confirm" class="button button-primary">この局面を開く</button></div></dialog>
+  <dialog id="help-dialog" class="modal modal-wide help-modal"><button type="button" id="close-help" class="icon-button dialog-close" aria-label="閉じる"><svg class="icon"><use href="#i-close"/></svg></button><p class="eyebrow">WELCOME TO YOUR STUDIO</p><h2>一手を、もっと深く。</h2><div class="help-steps"><section><span>01</span><div><h3>手番と戦法を選ぶ</h3><p>先手・後手と目指す戦法を選択します。「AIと対局」では相手側をAIが指します。</p></div></section><section><span>02</span><div><h3>相手の手を盤面に入力</h3><p>「研究」モードでは両者の駒を操作できます。駒と移動先を順にタップ。持ち駒を選ぶと、盤上に打てます。</p></div></section><section><span>03</span><div><h3>候補手と形勢を確認</h3><p>AIは手番側の候補手を探索します。評価値が正なら先手寄り、負なら後手寄り。棒グラフは形勢の可視化で、勝率ではありません。</p></div></section></div><div class="help-note"><h3>AIについて</h3><p id="engine-description">やねうら王 9.80git NNUE と評価関数 SuishoPetite2021-11 をこの端末内で実行します。評価や読みの深さは解析時間と端末性能で変化します。戦法は序盤の参考手に反映され、AIの候補手は探索の推奨順です。各候補の評価値は探索の深さによって変わります。</p><p>必勝・最強・世界最新を保証するサービスではありません。学習・検討や、AI利用が認められた対局でご活用ください。</p></div><div class="license-links"><a href="./engine-vendor/NOTICE.md" target="_blank" rel="noopener">AI・評価関数の出典</a><a href="./engine-vendor/yaneuraou-corresponding-source.tar.gz" download>エンジンの対応ソース</a><a href="./LICENSE.txt" target="_blank" rel="noopener">GPLライセンス</a></div><a href="./README.md" class="readme-link" target="_blank" rel="noopener">公開方法・詳しい仕様を見る <span>↗</span></a></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <noscript><p class="modal">将棋名人の解析にはJavaScriptが必要です。ブラウザでJavaScriptを有効にしてください。</p></noscript>
+  <script>if(location.protocol==='file:'){document.getElementById('engine-status').textContent='GitHub PagesのURLから開いてください';document.getElementById('analysis-detail').textContent='フォルダをGitHubへアップロードし、Pagesで公開するとAIが動作します。手順はREADME.mdに記載しています。';}</script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

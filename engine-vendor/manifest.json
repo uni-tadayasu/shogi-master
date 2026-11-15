@@ -1,0 +1,27 @@
+{
+  "engine": "YaneuraOu NNUE KP256 9.80git",
+  "evaluation": "SuishoPetite 2021-11",
+  "source_commit": "540483b9f379f90e7bd810cc8409b0be8d56e736",
+  "files": {
+    "yaneuraou.k-p.js": {
+      "bytes": 77409,
+      "sha256": "ad9145cf4bfb84417b0a957679741c7159c74c1a28c9cb937131030504c1b1b7"
+    },
+    "yaneuraou.k-p.wasm": {
+      "bytes": 1532967,
+      "sha256": "ad0b802592428bb216d8dad8bcf04cf3efc169ff405a12705216cc674f6d880d"
+    },
+    "yaneuraou-corresponding-source.tar.gz": {
+      "bytes": 1603216,
+      "sha256": "bb02d0ad12a4307c06cfdae2ef1b9ef793c85feb3df46964450171a7404e656c"
+    },
+    "suishopetite_20211123.k_p.nnue.cpp.gz": {
+      "bytes": 453755,
+      "sha256": "4fde15d0d7c6a8ecb86151f47938ed013a3a60fefb9775ef14c5a10dbdf0e08d"
+    },
+    "GPL-3.0.txt": {
+      "bytes": 35147,
+      "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+    }
+  }
+}
