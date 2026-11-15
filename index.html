@@ -4,18 +4,30 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#142636">
-  <meta name="description" content="将棋名人は、盤面から次の一手と形勢を分析する将棋AI研究室。先手・後手、戦法を選び、候補手と読み筋をひとつの画面で確認できます。PC・スマートフォン対応。">
+  <meta name="description" content="将棋名人｜Shogi Masterは、PC・スマホで使える将棋AI研究サイト。相手の指し手から候補手・読み筋・形勢を分析。先手・後手、64の戦法・構想、24の囲いガイド、持ち駒、棋譜の巻き戻しに対応。">
+  <meta name="author" content="KASAI SOLUTIONS INC.">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="canonical" href="https://uni-tadayasu.github.io/shogi-master/">
+  <link rel="manifest" href="./site.webmanifest">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="将棋名人 — 次の一手に、確信を。">
-  <meta property="og:description" content="AI解析・戦法選択・形勢判断。あなたの一手を深める、ブラウザ将棋研究室。">
-  <meta property="og:image" content="./assets/ogp.png">
+  <meta property="og:title" content="将棋名人｜Shogi Master">
+  <meta property="og:site_name" content="将棋名人｜Shogi Master">
+  <meta property="og:locale" content="ja_JP">
+  <meta property="og:url" content="https://uni-tadayasu.github.io/shogi-master/">
+  <meta property="og:description" content="AI解析・64の戦法・構想・24の囲いガイド・形勢判断。あなたの一手を深める、ブラウザ将棋研究室。">
+  <meta property="og:image" content="https://uni-tadayasu.github.io/shogi-master/assets/ogp.png">
+  <meta property="og:image:alt" content="将棋名人｜Shogi Master — 将棋盤・候補手・形勢分析">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
-  <title>将棋名人 | 次の一手に、確信を。</title>
+  <meta name="twitter:title" content="将棋名人｜Shogi Master">
+  <meta name="twitter:description" content="64の戦法・構想と24の囲いガイド。相手の一手から次の一手を研究する、PC・スマホ対応の将棋AI。">
+  <meta name="twitter:image" content="https://uni-tadayasu.github.io/shogi-master/assets/ogp.png">
+  <title>将棋名人｜Shogi Master</title>
   <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg">
   <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png">
   <link rel="stylesheet" href="./styles.css">
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://uni-tadayasu.github.io/shogi-master/#organization","name":"KASAI SOLUTIONS INC.","url":"https://uni-tadayasu.github.io/shogi-master/"},{"@type":"WebSite","@id":"https://uni-tadayasu.github.io/shogi-master/#website","name":"将棋名人｜Shogi Master","url":"https://uni-tadayasu.github.io/shogi-master/","inLanguage":"ja","publisher":{"@id":"https://uni-tadayasu.github.io/shogi-master/#organization"}},{"@type":"WebApplication","@id":"https://uni-tadayasu.github.io/shogi-master/#app","name":"将棋名人｜Shogi Master","url":"https://uni-tadayasu.github.io/shogi-master/","description":"将棋名人｜Shogi Masterは、PC・スマホで使える将棋AI研究サイト。相手の指し手から候補手・読み筋・形勢を分析。先手・後手、64の戦法・構想、24の囲いガイド、持ち駒、棋譜の巻き戻しに対応。","inLanguage":"ja","applicationCategory":"GameApplication","operatingSystem":"Web browser","browserRequirements":"JavaScript, WebAssembly SIMD, Web Workers","isAccessibleForFree":true,"image":"https://uni-tadayasu.github.io/shogi-master/assets/ogp.png","publisher":{"@id":"https://uni-tadayasu.github.io/shogi-master/#organization"},"featureList":["将棋AIによる候補手・読み筋・形勢分析","先手・後手の両対応","64の戦法・構想と24の囲いガイド","局面に応じた戦法の自動ガイド","棋譜の保存・読込・巻き戻し・やり直し"]}]}</script>
 </head>
 <body>
   <svg class="icon-definitions" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
@@ -40,22 +52,23 @@
   </defs></svg>
 
   <header class="site-header">
-    <a class="brand" href="./" aria-label="将棋名人 ホーム">
+    <a class="brand" href="./" aria-label="将棋名人｜Shogi Master ホーム">
       <img src="./assets/brand-mark.svg" width="43" height="48" alt="">
-      <span class="brand-wordmark">将棋名人<span>SHOGI MEIJIN</span></span>
+      <span class="brand-wordmark">将棋名人<span>SHOGI MASTER</span></span>
     </a>
     <div class="header-center"><span class="header-divider"></span><span>一手を磨く、あなたの将棋研究室。</span></div>
     <div class="header-actions">
       <span class="local-badge"><span class="status-dot"></span>ブラウザで解析</span>
       <button type="button" class="icon-button" id="import-btn" aria-label="SFEN局面を読み込む" title="SFEN局面を読み込む"><svg class="icon"><use href="#i-import"/></svg></button>
       <button type="button" class="icon-button" id="export-btn" aria-label="棋譜を書き出す" title="棋譜を書き出す"><svg class="icon"><use href="#i-export"/></svg></button>
+      <button type="button" class="icon-button" id="tools-btn" aria-label="便利な機能・表示設定" title="便利な機能・表示設定"><svg class="icon"><use href="#i-sliders"/></svg></button>
       <button type="button" class="icon-button" id="help-btn" aria-label="使い方・AIについて" title="使い方・AIについて"><svg class="icon"><use href="#i-info"/></svg></button>
     </div>
   </header>
 
   <main class="page-shell">
     <section class="page-intro" aria-label="将棋AI研究室">
-      <div><p class="eyebrow"><span></span> AI SHOGI STUDIO</p><h1>次の一手に、<em>確信を。</em></h1></div>
+      <div><p class="eyebrow"><span></span> AI SHOGI STUDIO</p><h1>将棋名人<span class="title-divider">｜</span><em>Shogi Master</em></h1></div>
       <div class="session-heading"><span class="live-mark"></span><span id="engine-status" role="status" aria-live="polite">AIを準備しています</span></div>
     </section>
 
@@ -66,7 +79,7 @@
           <label class="field" for="side-select"><span>あなたの手番</span><select id="side-select"><option value="0">先手 ▲</option><option value="1">後手 △</option></select></label>
           <label class="field" for="mode-select"><span>対局モード</span><select id="mode-select"><option value="study">研究・相手の手を入力</option><option value="play">AIと対局</option></select></label>
           <label class="field" for="strategy-select"><span>目指す戦法</span><select id="strategy-select"><option value="auto">おまかせ・最善手優先</option><option value="ibisha">居飛車</option><option value="yagura">矢倉</option><option value="shiken">四間飛車</option><option value="sanken">三間飛車</option><option value="nakabisha">中飛車</option></select></label>
-          <label class="field" for="time-select"><span>1回の解析時間</span><select id="time-select"><option value="1000">クイック · 1秒</option><option value="3000" selected>バランス · 3秒</option><option value="8000">じっくり · 8秒</option></select></label>
+          <label class="field" for="time-select"><span>1回の解析時間</span><select id="time-select"><option value="1000">クイック · 1秒</option><option value="3000" selected>バランス · 3秒</option><option value="8000">じっくり · 8秒</option><option value="30000">詳細解析 · 30秒</option></select></label>
         </div>
         <div class="strategy-note"><span class="small-icon"><svg class="icon"><use href="#i-book"/></svg></span><div><h3>戦法から、一手を考える。</h3><p>序盤の方針を選び、相手の指し手に合わせて局面を読み進めます。</p></div></div>
         <button type="button" class="button button-outline new-game-button" id="new-game"><svg class="icon"><use href="#i-plus"/></svg>新しい対局</button>
@@ -87,7 +100,7 @@
           </div>
         </div>
         <div class="player-row player-row-bottom"><div class="player-identity"><span class="player-stone stone-black" id="sidebadge-bottom">▲</span><span id="player-bottom">先手・あなた</span></div><div class="hand-host" id="hand-bottom"><div class="hand" id="hand-0" aria-label="先手の持ち駒"><span class="hand-empty">持ち駒なし</span></div></div></div>
-        <div class="board-toolbar"><span class="turn-indicator"><span></span><strong id="turn-label">先手の番です</strong></span><div class="board-tools"><button type="button" id="undo-btn" class="text-button" title="ひとつ前の手に戻る"><svg class="icon"><use href="#i-undo"/></svg><span>一手戻す</span></button><button type="button" id="flip-btn" class="text-button" title="盤面を反転"><svg class="icon"><use href="#i-flip"/></svg><span>反転</span></button></div></div>
+        <div class="board-toolbar"><span class="turn-indicator"><span></span><strong id="turn-label">先手の番です</strong></span><div class="board-tools"><button type="button" id="undo-btn" class="text-button" title="ひとつ前の手に戻る"><svg class="icon"><use href="#i-undo"/></svg><span>一手戻す</span></button><button type="button" id="redo-btn" class="text-button" title="戻した指し手をやり直す"><svg class="icon redo-icon"><use href="#i-undo"/></svg><span>やり直す</span></button><button type="button" id="flip-btn" class="text-button" title="盤面を反転"><svg class="icon"><use href="#i-flip"/></svg><span>反転</span></button></div></div>
       </section>
 
       <aside class="insight-panel" aria-label="AIの分析">
@@ -105,17 +118,20 @@
           <div class="analysis-meta" id="analysis-detail">局面の解析を準備中</div>
           <div class="analysis-actions"><button type="button" class="button button-primary" id="apply-best-btn" disabled><svg class="icon"><use href="#i-play"/></svg><span>推奨手を指す</span></button><button type="button" class="button button-icon" id="analyze-btn" aria-label="もう一度AI解析" title="もう一度AI解析"><svg class="icon"><use href="#i-spark"/></svg></button></div>
         </section>
-        <section class="advice-panel"><div class="advice-mark"><svg class="icon"><use href="#i-target"/></svg></div><div><h2>一手のヒント</h2><p id="advice-text">まずは角道を開けるか、飛車先の歩を進めて駒を働かせましょう。</p></div></section>
-        <section class="history-panel panel"><div class="panel-heading"><h2><svg class="icon"><use href="#i-clock"/></svg>指し手の記録</h2><div class="history-controls"><button type="button" id="history-prev" class="tiny-button" title="前の局面" aria-label="前の局面"><svg class="icon"><use href="#i-chev-left"/></svg></button><button type="button" id="history-next" class="tiny-button" title="次の局面" aria-label="次の局面"><svg class="icon"><use href="#i-chev-right"/></svg></button><button type="button" id="history-last" class="tiny-button" title="最新の局面" aria-label="最新の局面"><svg class="icon"><use href="#i-last"/></svg></button></div></div><div class="history-list" id="history-list"><p class="history-empty">あなたの一手から、研究がはじまります。</p></div></section>
+        <section class="advice-panel"><div class="advice-mark"><svg class="icon"><use href="#i-target"/></svg></div><div class="advice-content"><div class="advice-heading"><h2 id="active-strategy">一手の方針</h2><label class="adaptive-control"><input type="checkbox" id="adaptive-strategy" checked><span>相手に合わせて自動調整</span></label></div><p id="advice-text">まずは角道を開けるか、飛車先の歩を進めて駒を働かせましょう。</p></div></section>
+        <section class="history-panel panel"><div class="panel-heading"><h2><svg class="icon"><use href="#i-clock"/></svg>指し手の記録</h2><div class="history-controls"><button type="button" id="history-first" class="tiny-button" title="最初の局面へ戻る" aria-label="最初の局面へ戻る"><svg class="icon first-icon"><use href="#i-last"/></svg></button><button type="button" id="history-prev" class="tiny-button" title="前の局面" aria-label="前の局面"><svg class="icon"><use href="#i-chev-left"/></svg></button><button type="button" id="history-next" class="tiny-button" title="次の局面" aria-label="次の局面"><svg class="icon"><use href="#i-chev-right"/></svg></button><button type="button" id="history-last" class="tiny-button" title="最新の局面" aria-label="最新の局面"><svg class="icon"><use href="#i-last"/></svg></button></div></div><div class="history-list" id="history-list"><p class="history-empty">あなたの一手から、研究がはじまります。</p></div></section>
       </aside>
     </div>
-    <footer class="site-footer"><span>SHOGI MEIJIN <i>—</i> 思考を深め、一手を磨く。</span><span>AIの評価は目安であり、勝利を保証するものではありません。</span></footer>
+    <footer class="site-footer"><span class="copyright">© KASAI SOLUTIONS INC.</span><span>AIの評価は目安であり、勝利を保証するものではありません。</span><details class="about-site"><summary>将棋名人について</summary><div class="about-body"><h2>将棋名人｜Shogi Masterとは</h2><p>将棋名人は、盤面を操作しながら次の一手を検討できるブラウザ将棋AIです。研究モードでは先手・後手の両者の駒を自分で動かし、AIが示す候補手・読み筋・形勢を確認できます。持ち駒、成り、棋譜の保存・読込にも対応します。おまかせを含む64の戦法・構想と24の囲いガイドから、研究のテーマを選べます。</p><h3>戦法は相手に合わせて変わりますか？</h3><p>自動調整を有効にすると、相手の飛車の配置や攻めの進み方などから方針のガイドを更新します。AIの候補手は常に現在の局面から計算します。ガイドは定跡の完全な識別や最善戦法の保証ではありません。</p><h3>間違えた手は戻せますか？</h3><p>記録した棋譜の最初の局面まで、先の手順を消さずに移動でき、戻した指し手を進め直すこともできます。履歴を選ぶか、便利な機能から手数を指定してください。</p><h3>必ず勝てますか？形勢は正確ですか？</h3><p>必勝は保証していません。やねうら王の探索結果は解析時間と端末性能によって変わります。形勢の棒グラフは評価値の目安であり、実測された勝率ではありません。評価関数はSuishoPetite 2021-11です。</p><h3>アプリのインストールやAI利用料は必要ですか？</h3><p>対応ブラウザでページを開いて使用します。AIは端末内で計算し、外部AIサービスのAPIキーは使いません。スマートフォンでは主要情報を1画面にまとめ、候補手や棋譜を横方向に確認できます。</p><p class="about-license">本サイトの独自部分：KASAI SOLUTIONS INC.。将棋エンジン・評価関数の著作者とライセンスは<a href="./engine-vendor/NOTICE.md">同梱の出典</a>を参照してください。</p></div></details></footer>
   </main>
 
+  <dialog id="tools-dialog" class="modal modal-wide tools-modal"><button type="button" id="close-tools" class="icon-button dialog-close" aria-label="便利な機能を閉じる"><svg class="icon"><use href="#i-close"/></svg></button><p class="eyebrow">STUDY TOOLS</p><h2>研究を、もっと自由に。</h2><section class="tools-section"><h3>表示と操作</h3><label class="toggle-row"><input type="checkbox" id="hint-toggle" checked><span>盤上の推奨矢印を表示する</span></label><label class="toggle-row"><input type="checkbox" id="confirm-move"><span>駒を動かす前に確認する</span></label></section><section class="tools-section"><h3>戦法と囲いを知る</h3><div class="tool-buttons"><button type="button" id="catalog-btn" class="button button-outline"><svg class="icon"><use href="#i-book"/></svg>戦法・構想カタログ</button></div><label class="field" for="castle-select"><span>目指す囲い</span><select id="castle-select"><option value="auto">おまかせ</option></select></label><p id="castle-summary">囲いの特徴と注意点を確認できます。実際の指し手は、局面ごとのAI候補で確認してください。</p></section><section class="tools-section"><h3>詳しく読む</h3><div class="tool-buttons"><button type="button" id="long-analysis-btn" class="button button-primary">30秒詳細解析</button><button type="button" id="stop-analysis-btn" class="button button-outline">解析を中断</button></div><p>解析を長くすると、より深く読める場合があります。端末の性能により結果は変わります。</p></section><section class="tools-section"><h3>好きな局面へ</h3><div class="history-jump-row"><label for="history-jump">手数</label><input type="number" id="history-jump" min="0" step="1" value="0" inputmode="numeric"><button type="button" id="history-jump-btn" class="button button-outline">この局面へ</button></div><p>0を指定すると棋譜の最初へ戻れます。</p><p id="history-jump-error" class="form-error" role="alert"></p></section><section class="tools-section"><h3>局面・棋譜をコピー</h3><div class="tool-buttons"><button type="button" id="copy-sfen-btn" class="button button-outline">SFEN局面をコピー</button><button type="button" id="copy-usi-btn" class="button button-outline">USI棋譜をコピー</button></div></section><section class="tools-section"><h3>保存した分岐</h3><div id="branch-list" class="branch-list"><p>過去の局面から別の手を指したときに、元の続きがここへ保存されます。</p></div></section></dialog>
+  <dialog id="catalog-dialog" class="modal modal-wide catalog-modal"><button type="button" id="close-catalog" class="icon-button dialog-close" aria-label="戦法カタログを閉じる"><svg class="icon"><use href="#i-close"/></svg></button><p class="eyebrow">STRATEGY LIBRARY</p><h2>戦法を知り、構想を選ぶ。</h2><p class="catalog-intro">おまかせを含む64の戦法・構想を収録。各項目は研究の方針ガイドであり、特定の手順や勝利を保証するものではありません。</p><label class="field catalog-search" for="strategy-search"><span>名前・分類・特徴で検索</span><input type="search" id="strategy-search" placeholder="例：角換わり、振り飛車、速攻" autocomplete="off"></label><p id="strategy-count" class="catalog-count" role="status" aria-live="polite">64の戦法・構想</p><div id="strategy-catalog" class="strategy-catalog"></div></dialog>
+  <dialog id="move-confirm-dialog" class="modal"><h2>この手を指しますか？</h2><p id="confirm-move-label"></p><div class="dialog-actions"><button type="button" id="confirm-move-cancel" class="button button-outline">キャンセル</button><button type="button" id="confirm-move-yes" class="button button-primary">この手を指す</button></div></dialog>
   <dialog id="promotion-dialog" class="modal"><div class="dialog-emblem">成</div><h2>駒を成りますか？</h2><p>成ると駒の動きが変わります。</p><div class="dialog-actions"><button type="button" id="promo-no" class="button button-outline">成らない</button><button type="button" id="promo-yes" class="button button-primary">成る</button></div></dialog>
   <dialog id="reset-dialog" class="modal"><h2>新しい対局を始めますか？</h2><p>現在の棋譜を残したい場合は、先に右上から書き出してください。</p><div class="dialog-actions"><button type="button" id="reset-cancel" class="button button-outline">キャンセル</button><button type="button" id="reset-confirm" class="button button-primary">初期局面に戻す</button></div></dialog>
   <dialog id="import-dialog" class="modal modal-wide"><h2>局面を読み込む</h2><p>SFEN局面・USI position・保存したJSON棋譜を貼り付けるか、ファイルを選んでください。現在の棋譜は置き換わります。</p><label class="field" for="sfen-input"><span>SFEN / USI / JSON</span><textarea id="sfen-input" rows="4" spellcheck="false" placeholder="lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1"></textarea></label><p id="import-error" class="form-error" role="alert"></p><div class="dialog-actions"><button type="button" id="import-cancel" class="button button-outline">キャンセル</button><button type="button" id="import-confirm" class="button button-primary">この局面を開く</button></div></dialog>
-  <dialog id="help-dialog" class="modal modal-wide help-modal"><button type="button" id="close-help" class="icon-button dialog-close" aria-label="閉じる"><svg class="icon"><use href="#i-close"/></svg></button><p class="eyebrow">WELCOME TO YOUR STUDIO</p><h2>一手を、もっと深く。</h2><div class="help-steps"><section><span>01</span><div><h3>手番と戦法を選ぶ</h3><p>先手・後手と目指す戦法を選択します。「AIと対局」では相手側をAIが指します。</p></div></section><section><span>02</span><div><h3>相手の手を盤面に入力</h3><p>「研究」モードでは両者の駒を操作できます。駒と移動先を順にタップ。持ち駒を選ぶと、盤上に打てます。</p></div></section><section><span>03</span><div><h3>候補手と形勢を確認</h3><p>AIは手番側の候補手を探索します。評価値が正なら先手寄り、負なら後手寄り。棒グラフは形勢の可視化で、勝率ではありません。</p></div></section></div><div class="help-note"><h3>AIについて</h3><p id="engine-description">やねうら王 9.80git NNUE と評価関数 SuishoPetite2021-11 をこの端末内で実行します。評価や読みの深さは解析時間と端末性能で変化します。戦法は序盤の参考手に反映され、AIの候補手は探索の推奨順です。各候補の評価値は探索の深さによって変わります。</p><p>必勝・最強・世界最新を保証するサービスではありません。学習・検討や、AI利用が認められた対局でご活用ください。</p></div><div class="license-links"><a href="./engine-vendor/NOTICE.md" target="_blank" rel="noopener">AI・評価関数の出典</a><a href="./engine-vendor/yaneuraou-corresponding-source.tar.gz" download>エンジンの対応ソース</a><a href="./LICENSE.txt" target="_blank" rel="noopener">GPLライセンス</a></div><a href="./README.md" class="readme-link" target="_blank" rel="noopener">公開方法・詳しい仕様を見る <span>↗</span></a></dialog>
+  <dialog id="help-dialog" class="modal modal-wide help-modal"><button type="button" id="close-help" class="icon-button dialog-close" aria-label="閉じる"><svg class="icon"><use href="#i-close"/></svg></button><p class="eyebrow">WELCOME TO YOUR STUDIO</p><h2>一手を、もっと深く。</h2><div class="help-steps"><section><span>01</span><div><h3>手番と戦法を選ぶ</h3><p>先手・後手と目指す戦法を選択します。「AIと対局」では相手側をAIが指します。</p></div></section><section><span>02</span><div><h3>相手の手を盤面に入力</h3><p>「研究」モードでは両者の駒を操作できます。駒と移動先を順にタップ。持ち駒を選ぶと、盤上に打てます。</p></div></section><section><span>03</span><div><h3>候補手と形勢を確認</h3><p>AIは手番側の候補手を探索します。評価値が正なら先手寄り、負なら後手寄り。棒グラフは形勢の可視化で、勝率ではありません。</p></div></section></div><div class="help-note"><h3>AIについて</h3><p id="engine-description">やねうら王 9.80git NNUE と評価関数 SuishoPetite2021-11 をこの端末内で実行します。評価や読みの深さは解析時間と端末性能で変化します。30秒の詳細解析も選べます。戦法の自動調整は盤面の特徴を用いたガイドで、定跡の完全な識別や最善戦法の保証ではありません。AIの候補手は探索の推奨順です。各候補の評価値は探索の深さによって変わります。</p><p>必勝・最強・世界最新を保証するサービスではありません。学習・検討や、AI利用が認められた対局でご活用ください。</p></div><div class="license-links"><a href="./engine-vendor/NOTICE.md" target="_blank" rel="noopener">AI・評価関数の出典</a><a href="./engine-vendor/yaneuraou-corresponding-source.tar.gz" download>エンジンの対応ソース</a><a href="./LICENSE.txt" target="_blank" rel="noopener">GPLライセンス</a></div><a href="./README.md" class="readme-link" target="_blank" rel="noopener">公開方法・詳しい仕様を見る <span>↗</span></a></dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <noscript><p class="modal">将棋名人の解析にはJavaScriptが必要です。ブラウザでJavaScriptを有効にしてください。</p></noscript>
   <script>if(location.protocol==='file:'){document.getElementById('engine-status').textContent='GitHub PagesのURLから開いてください';document.getElementById('analysis-detail').textContent='フォルダをGitHubへアップロードし、Pagesで公開するとAIが動作します。手順はREADME.mdに記載しています。';}</script>
