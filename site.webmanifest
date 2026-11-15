@@ -1,0 +1,24 @@
+{
+  "id": "./",
+  "name": "将棋名人｜Shogi Master",
+  "short_name": "Shogi Master",
+  "description": "将棋名人｜Shogi Masterは、PC・スマホで使える将棋AI研究サイト。相手の指し手から候補手・読み筋・形勢を分析。先手・後手、64の戦法・構想、24の囲いガイド、持ち駒、棋譜の巻き戻しに対応。",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f3ee",
+  "theme_color": "#142636",
+  "icons": [
+    {
+      "src": "./assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+import {readFile,access} from 'node:fs/promises';
+import {resolve} from 'node:path';
+import assert from 'node:assert/strict';
+const root=resolve(import.meta.dirname,'..'),html=await readFile(resolve(root,'index.html'),'utf8');
+const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);assert.equal(new Set(ids).size,ids.length,'Duplicate IDs');
+for(const [,path]of html.matchAll(/(?:src|href)="(\.\/[^"#]+)"/g))await access(resolve(root,path));
+for(const [,json]of html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g))JSON.parse(json);
+assert(html.includes('<title>将棋名人｜Shogi Master</title>'),'Exact title');
+assert(html.includes('KASAI SOLUTIONS INC.'),'Copyright credit');
+assert(html.includes('https://uni-tadayasu.github.io/shogi-master/'),'Public URL');
+assert(html.includes('rel="canonical"'),'Canonical URL');
+assert(!html.includes('noindex'),'Indexable');
+JSON.parse(await readFile(resolve(root,'site.webmanifest'),'utf8'));
+for(const path of ['robots.txt','sitemap.xml'])assert((await readFile(resolve(root,path),'utf8')).includes('https://uni-tadayasu.github.io/shogi-master/'));
+console.log('Site metadata and local resources verified');

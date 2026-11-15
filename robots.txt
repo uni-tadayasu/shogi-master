@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://uni-tadayasu.github.io/shogi-master/sitemap.xml
