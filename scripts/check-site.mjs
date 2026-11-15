@@ -1,8 +1,15 @@
-import {readFile,access} from 'node:fs/promises';
+import {readFile,access,readdir} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import assert from 'node:assert/strict';
 const root=resolve(import.meta.dirname,'..'),html=await readFile(resolve(root,'index.html'),'utf8');
 const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);assert.equal(new Set(ids).size,ids.length,'Duplicate IDs');
+const app=await readFile(resolve(root,'app.js'),'utf8');
+const dynamicIds=new Set([...app.matchAll(/\.id\s*=\s*['"]([^'"]+)['"]/g)].map(m=>m[1]));
+for(const [,id]of app.matchAll(/\$\(['"]([^'"]+)['"]\)/g))assert(ids.includes(id)||dynamicIds.has(id),`Missing application control: ${id}`);
+for(const name of await readdir(root))if(name.endsWith('.js')){
+  const module=await readFile(resolve(root,name),'utf8');
+  for(const [,path]of module.matchAll(/\bfrom\s*['"](\.\/[^'"]+)['"]/g))await access(resolve(root,path));
+}
 for(const [,path]of html.matchAll(/(?:src|href)="(\.\/[^"#]+)"/g))await access(resolve(root,path));
 for(const [,json]of html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g))JSON.parse(json);
 assert(html.includes('<title>将棋名人｜Shogi Master</title>'),'Exact title');

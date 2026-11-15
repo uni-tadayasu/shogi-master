@@ -2,24 +2,46 @@ import {initialState,cloneState,legalMoves,applyMove,isInCheck,toSFEN,fromSFEN,m
 
 import {strategyData,getAdaptivePlan,castles} from './strategy.js';
 import {decodeGame,makeRecord,appendMove,previousCursor} from './game-record.js';
+import {defaultHashMB,normalizeEngineConfig} from './engine-config.js';
+import {hasExactScore,selectBestmoveInfo} from './engine-analysis.js';
+import {createNarrator,moveNarration,evaluationNarration} from './narration.js';
+import {mountStrategyStudio} from './strategy-studio.js';
+import {getPlanGuide} from './custom-strategies.js';
+import {strategyTransition,appendStrategyEvent} from './strategy-events.js';
 
 const $=id=>document.getElementById(id);
 const STORAGE='shogi-meijin-v1';
 const labels={P:'歩',L:'香',N:'桂',S:'銀',G:'金',B:'角',R:'飛',K:'玉','+P':'と','+L':'成香','+N':'成桂','+S':'成銀','+B':'馬','+R':'龍'};
 const sideName=n=>n===0?'先手':'後手';
-let settings={side:0,strategy:'auto',castle:'auto',adaptive:true,hints:true,confirm:false,mode:'study',time:3000};
+const defaultHash=defaultHashMB({deviceMemory:navigator.deviceMemory,isMobile:matchMedia('(max-width:700px)').matches});
+let settings={side:0,strategy:'auto',castle:'auto',adaptive:true,hints:true,confirm:false,mode:'study',time:1000,multiPV:1,hashMB:defaultHash,voiceURI:'',speechRate:1};
+let narrator=null,studio=null,strategyEvents=[],lastPlan=null,activeMultiPV=1,analysisStarted=0;
+let positionRevision=0,lastNarratedEvaluation=null;
 let branches=[],currentEvaluation=null,pendingRequested=null;
 let states=[initialState()],moves=[],cursor=0,flipped=false,selected=null,legal=[],candidates=[],selectedCandidate=0;
 let worker=null,requestId=0,thinking=false,engineFailed=false,engineName='やねうら王 NNUE',pendingPromotion=null,autoTimer=null;
 const state=()=>states[cursor];
 const engineResults=new Map();
-let analysisBatches=new Map(),latestCandidates=[];
+let analysisBatches=new Map(),latestCandidates=[],boundedCandidates=new Map(),exactCandidates=new Map();
 let toastTimer;
 function toast(message){let el=$('toast');if(!el){el=document.createElement('div');el.id='toast';el.className='toast';el.setAttribute('role','status');document.body.append(el);}el.textContent=message;el.classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('visible'),4200);}
-function persist(){try{localStorage.setItem(STORAGE,JSON.stringify({...makeRecord(states,moves,cursor),settings,branches}));}catch{toast('端末内への保存に失敗しました。棋譜を書き出して保存してください。');}}
-function restore(){try{const data=JSON.parse(localStorage.getItem(STORAGE));if(!data)return;const loaded=decodeGame(data);states=loaded.states;moves=loaded.moves;cursor=loaded.cursor;const v=data.settings||{};settings={side:v.side===1?1:0,strategy:Object.hasOwn(strategyData,v.strategy)?v.strategy:'auto',castle:castles.some(c=>c.id===v.castle)?v.castle:'auto',adaptive:v.adaptive!==false,hints:v.hints!==false,confirm:v.confirm===true,mode:v.mode==='play'?'play':'study',time:[1000,3000,8000,30000].includes(v.time)?v.time:3000};branches=Array.isArray(data.branches)?data.branches.filter(b=>b?.record?.initialSfen&&Array.isArray(b.record.moves)).slice(-20):[];flipped=settings.side===1;}catch{toast('保存された棋譜を読み込めなかったため、初期局面で開始しました。');}}
+function persist(){try{localStorage.setItem(STORAGE,JSON.stringify({...makeRecord(states,moves,cursor),settings,branches,strategyEvents}));}catch{toast('端末内への保存に失敗しました。棋譜を書き出して保存してください。');}}
+function restore(){
+ try{
+  const data=JSON.parse(localStorage.getItem(STORAGE));if(!data)return;
+  const loaded=decodeGame(data);states=loaded.states;moves=loaded.moves;cursor=loaded.cursor;
+  const v=data.settings||{},engine=normalizeEngineConfig({timeMs:v.time,multiPV:v.multiPV,hashMB:v.hashMB},{hashMB:defaultHash});
+  // Existing v2 users migrate to the new one-second focused default once.
+  const migrated=v.analysisVersion===3;
+  settings={side:v.side===1?1:0,strategy:Object.hasOwn(strategyData,v.strategy)||/^custom:custom-[a-zA-Z0-9-]+$/.test(v.strategy)?v.strategy:'auto',castle:castles.some(c=>c.id===v.castle)?v.castle:'auto',adaptive:v.adaptive!==false,hints:v.hints!==false,confirm:v.confirm===true,mode:v.mode==='play'?'play':'study',time:migrated&&[1000,3000,8000,15000,30000,60000].includes(engine.timeMs)?engine.timeMs:1000,multiPV:migrated?engine.multiPV:1,hashMB:engine.hashMB,analysisVersion:3,voiceURI:typeof v.voiceURI==='string'?v.voiceURI:'',speechRate:Math.max(.7,Math.min(1.5,Number(v.speechRate)||1))};
+  branches=Array.isArray(data.branches)?data.branches.filter(b=>b?.record?.initialSfen&&Array.isArray(b.record.moves)).slice(-20):[];
+  strategyEvents=Array.isArray(data.strategyEvents)?data.strategyEvents.filter(e=>e&&typeof e.text==='string'&&typeof e.to==='string'&&Number.isInteger(e.ply)).slice(-200):[];
+  flipped=settings.side===1;
+ }catch{toast('保存された棋譜を読み込めなかったため、初期局面で開始しました。');}
+}
+
 function archiveRecord(record,label){if(!record.moves.length)return;branches.push({id:Date.now()+'-'+Math.random().toString(36).slice(2,7),label:`${label} · ${record.moves.length}手`,record});branches=branches.slice(-20);renderBranches();}
-function renderBranches(){const el=$('branch-list');if(!el)return;el.replaceChildren();if(!branches.length){el.textContent='分岐の保存はまだありません。過去の局面から別の手を指すと元の棋譜を保存します。';return;}for(const b of [...branches].reverse()){const button=document.createElement('button');button.type='button';button.className='branch-button';button.textContent=b.label;button.addEventListener('click',()=>{try{const loaded=decodeGame(b.record);archiveRecord(makeRecord(states,moves,cursor),'切替前の棋譜');states=loaded.states;moves=loaded.moves;cursor=loaded.cursor;selected=null;settings.mode='study';$('mode-select').value='study';$('tools-dialog').close();persist();refreshPosition();toast('保存した棋譜を研究モードで復元しました。');}catch(e){toast('復元できません：'+e.message);}});el.append(button);}}
+function renderBranches(){const el=$('branch-list');if(!el)return;el.replaceChildren();if(!branches.length){el.textContent='分岐の保存はまだありません。過去の局面から別の手を指すと元の棋譜を保存します。';return;}for(const b of [...branches].reverse()){const button=document.createElement('button');button.type='button';button.className='branch-button';button.textContent=b.label;button.addEventListener('click',()=>{try{const loaded=decodeGame(b.record);narrator?.stop();archiveRecord(makeRecord(states,moves,cursor),'切替前の棋譜');states=loaded.states;moves=loaded.moves;cursor=loaded.cursor;selected=null;settings.mode='study';$('mode-select').value='study';$('tools-dialog').close();persist();refreshPosition();toast('保存した棋譜を研究モードで復元しました。');}catch(e){toast('復元できません：'+e.message);}});el.append(button);}}
 function requestMove(move){if(settings.confirm){pendingRequested={usi:moveToUSI(move),key:positionKey(state())};$('confirm-move-label').textContent=moveLabel(state(),move)+' を指します。';$('move-confirm-dialog').showModal();}else commitMove(move);}
 function gameResult(){
  const s=state(),key=positionKey(s),occ=[];
@@ -76,11 +98,12 @@ function clickSquare(i){
  renderBoard();
 }
 function commitMove(m){
- try{const next=appendMove(states,moves,cursor,m);if(next.archived)archiveRecord(next.archived,`${cursor}手目から分岐する前`);clearTimeout(autoTimer);states=next.states;moves=next.moves;cursor=next.cursor;selected=null;pendingPromotion=null;pendingRequested=null;persist();refreshPosition();}catch(e){toast('この局面では指せない手です。再解析してください。');}
+ const spoken=moveNarration(state(),m,cursor+1);
+ try{const next=appendMove(states,moves,cursor,m);if(next.archived)archiveRecord(next.archived,`${cursor}手目から分岐する前`);clearTimeout(autoTimer);states=next.states;moves=next.moves;cursor=next.cursor;selected=null;pendingPromotion=null;pendingRequested=null;persist();narrate(spoken,{key:'move-'+(++positionRevision),priority:'high'});refreshPosition();}catch(e){toast('この局面では指せない手です。再解析してください。');}
 }
-function refreshPosition(){currentEvaluation=null;legal=legalMoves(state());candidates=[];selectedCandidate=0;render();startAnalysis();}
-function render(){
- renderBoard();renderHistory();renderGuide();
+function refreshPosition(source='position'){lastNarratedEvaluation=null;currentEvaluation=null;legal=legalMoves(state());candidates=[];selectedCandidate=0;render(source);startAnalysis();}
+function render(source='position'){
+ renderBoard();renderHistory();renderGuide(source);
  $('move-counter').textContent=String(cursor);
  const result=gameResult();$('turn-label').textContent=result.over?resultText(result):`${sideName(state().turn)}の手番${isInCheck(state())?' · 王手':''}`;
  $('phase-label').textContent=result.over?'終局':cursor<20?'序盤':cursor<60?'中盤':'終盤';
@@ -92,41 +115,58 @@ function renderHistory(){const el=$('history-list');el.replaceChildren();if(!cur
  for(let i=0;i<moves.length;i++){const b=document.createElement('button');b.type='button';b.className='history-item'+(i+1===cursor?' current':'')+(i+1>cursor?' future':'');const n=document.createElement('small');n.textContent=String(i+1).padStart(2,'0');const label=document.createElement('span');const m=moves[i],point=n=>`${9-n%9}${['一','二','三','四','五','六','七','八','九'][Math.floor(n/9)]}`;label.textContent=moveLabel(states[i],m);b.title=`${i+1}手目 ${sideName(states[i].turn)}：${m.drop?'持ち駒から':point(m.from)+'から'}${point(m.to)}へ${m.promote?'・成り':''}`;b.setAttribute('aria-label',b.title);b.append(n,label);b.addEventListener('click',()=>goTo(i+1));el.append(b);}
  const active=el.querySelector('.current');if(active){const a=active.getBoundingClientRect(),r=el.getBoundingClientRect();if(a.top<r.top)el.scrollTop+=a.top-r.top;else if(a.bottom>r.bottom)el.scrollTop+=a.bottom-r.bottom;}
 }
-function goTo(index){clearTimeout(autoTimer);cursor=Math.max(0,Math.min(moves.length,index));selected=null;persist();refreshPosition();}
+function goTo(index){clearTimeout(autoTimer);narrator?.stop();cursor=Math.max(0,Math.min(moves.length,index));selected=null;persist();refreshPosition('history');}
 function startAnalysis(timeOverride){
- clearTimeout(autoTimer);requestId++;candidates=[];analysisBatches=new Map();latestCandidates=[];selectedCandidate=0;thinking=false;
+ const config=normalizeEngineConfig({timeMs:timeOverride||settings.time,multiPV:settings.multiPV,hashMB:settings.hashMB});activeMultiPV=config.multiPV;analysisStarted=performance.now();document.body.dataset.engineProfile=activeMultiPV===1?'focused':'compare';
+ clearTimeout(autoTimer);requestId++;candidates=[];analysisBatches=new Map();latestCandidates=[];boundedCandidates=new Map();exactCandidates=new Map();selectedCandidate=0;thinking=false;
  const result=gameResult();$('eval-label').textContent=result.over?resultText(result):'解析中';$('eval-score').textContent='—';$('eval-detail').textContent='評価は先手基準 · ＋は先手有利';$('eval-bar').style.width='50%';$('pv-line').textContent='読み筋を解析しています…';$('analysis-detail').textContent='局面をエンジンに送信';$('apply-best-btn').disabled=true;
  if(result.over){worker?.postMessage({type:'stop'});$('engine-status').textContent='終局';$('eval-detail').textContent=result.reason==='repetition'?'同一局面が4回出現しました。':'対局終了。棋譜を戻して検討できます。';$('pv-line').textContent='棋譜から局面を戻して検討できます。';$('analysis-detail').textContent='解析終了';renderCandidates();return;}
  if(engineFailed){$('engine-status').textContent='AI読込エラー';$('eval-label').textContent='評価を取得できません';$('analysis-detail').textContent='「再解析」で再読み込みしてください。';return;}
- thinking=true;$('engine-status').textContent='AI解析中';$('engine-status').classList.add('thinking');
- worker?.postMessage({type:'analyze',id:requestId,sfen:toSFEN(state()),initialSfen:toSFEN(states[0]),moves:moves.slice(0,cursor).map(moveToUSI),timeMs:timeOverride||settings.time,multiPV:3});renderCandidates();
+ thinking=true;$('engine-status').textContent=`${config.timeMs/1000}秒・${activeMultiPV===1?'集中':'比較'}解析中`;$('engine-status').classList.add('thinking');
+ worker?.postMessage({type:'analyze',id:requestId,sfen:toSFEN(state()),initialSfen:toSFEN(states[0]),moves:moves.slice(0,cursor).map(moveToUSI),...config});renderCandidates();
 }
 function stopAnalysis(){clearTimeout(autoTimer);requestId++;worker?.postMessage({type:'stop'});thinking=false;$('engine-status').classList.remove('thinking');$('engine-status').textContent='解析を停止しました';renderCandidates();if(!candidates.some(Boolean)&&!gameResult().over){$('eval-label').textContent='未解析';$('eval-score').textContent='—';$('eval-detail').textContent='解析を中断しました。再解析で形勢を確認できます。';$('pv-line').textContent='再解析すると読み筋が表示されます。';$('analysis-detail').textContent='候補手の取得前に中断';const empty=$('candidates').querySelector('.candidate-empty');if(empty)empty.textContent='候補手はまだありません。再解析で再開できます。';}toast('解析を停止しました。再解析で再開できます。');}
 function createEngine(){if(worker)worker.terminate();engineFailed=false;try{worker=new Worker(new URL('./engine-vendor/engine-worker.js',import.meta.url));worker.onmessage=handleEngine;worker.onerror=e=>engineError(e.message);worker.postMessage({type:'init'});}catch(e){engineError(e.message);}}
 function engineError(message){engineFailed=true;thinking=false;$('engine-status').textContent='AI読込エラー';$('engine-status').classList.remove('thinking');$('eval-label').textContent='AIを読み込めません';$('analysis-detail').textContent='HTTP(S)で開き、「再解析」を押してください。';$('apply-best-btn').disabled=true;console.error('Engine:',message);}
 function handleEngine(event){const msg=event.data;
- if(msg.type==='error'){engineError(msg.message);return;}
+ if(msg.type==='error'){if(msg.id==null||msg.id===requestId)engineError(msg.message);return;}
  if(msg.type==='ready'){engineName=msg.name||engineName;if(!thinking)$('engine-status').textContent='AI準備完了';return;}
  if(msg.id!==requestId)return;
  if(msg.type==='info'){
   if(!Array.isArray(msg.pv)||!msg.pv.length)return;const move=moveFromUSI(state(),msg.pv[0]);if(!move)return;
-  const index=Math.max(0,(msg.multipv||msg.multiPV||1)-1);if(index>2)return;
-  const entry={...msg,move};latestCandidates[index]=entry;let batch=analysisBatches.get(msg.depth)||[];batch[index]=entry;analysisBatches.set(msg.depth,batch);const expected=Math.min(3,legal.length);if(Array.from({length:expected},(_,i)=>batch[i]).every(Boolean)){candidates=batch.slice(0,expected);renderCandidates();renderEvaluation(candidates[0]);renderBoard();}
+  const index=Math.max(0,(msg.multipv||msg.multiPV||1)-1);if(index>=activeMultiPV)return;
+  const entry={...msg,move};if(msg.score?.bound){boundedCandidates.set(moveToUSI(move),entry);$('analysis-detail').textContent=`探索中 · 深さ ${msg.depth||'—'} · ${Number(msg.nodes||0).toLocaleString('ja-JP')}局面`;return;}if(!hasExactScore(entry))return;const previousExact=exactCandidates.get(moveToUSI(move));if(!previousExact||entry.depth>=previousExact.depth)exactCandidates.set(moveToUSI(move),entry);latestCandidates[index]=entry;let batch=analysisBatches.get(msg.depth)||[];batch[index]=entry;analysisBatches.set(msg.depth,batch);const expected=Math.min(activeMultiPV,legal.length);if(Array.from({length:expected},(_,i)=>batch[i]).every(Boolean)&&new Set(batch.slice(0,expected).map(c=>moveToUSI(c.move))).size===expected){candidates=batch.slice(0,expected);renderCandidates();renderEvaluation(candidates[0]);renderAnalysisHints();}
   $('analysis-detail').textContent=`深さ ${msg.depth||'—'} · ${Number(msg.nodes||0).toLocaleString('ja-JP')}局面 · ${((msg.time||0)/1000).toFixed(1)}秒`;
  }
  if(msg.type==='done'){
   if(msg.bestmove==='win'||msg.bestmove==='resign'){engineResults.set(positionKey(state()),{over:true,reason:msg.bestmove==='win'?'declaration':'resign',winner:msg.bestmove==='win'?state().turn:1-state().turn});refreshPosition();return;}
   thinking=false;$('engine-status').classList.remove('thinking');$('engine-status').textContent='解析完了';
-  if(msg.bestmove){const move=moveFromUSI(state(),msg.bestmove);if(move&&(!candidates[0]||moveToUSI(candidates[0].move)!==msg.bestmove)){const matching=latestCandidates.find(c=>c&&moveToUSI(c.move)===msg.bestmove)||candidates.find(c=>c&&moveToUSI(c.move)===msg.bestmove);const top=matching||{move,pv:[msg.bestmove],score:null,depth:0};candidates=[top,...candidates.filter(c=>c&&moveToUSI(c.move)!==msg.bestmove)].slice(0,3);selectedCandidate=0;if(top.score)renderEvaluation(top);else{$('eval-label').textContent='評価値未確定';$('eval-score').textContent='—';}}}
-  renderCandidates();renderBoard();renderGuide();
+  if(msg.bestmove){
+   const move=moveFromUSI(state(),msg.bestmove);
+   if(move){const matching=selectBestmoveInfo(msg.bestmove,[...exactCandidates.values(),...boundedCandidates.values()]);const top=matching?{...matching,move}:{move,pv:[msg.bestmove],score:null,depth:0};
+    candidates=[top,...candidates.filter(c=>c&&moveToUSI(c.move)!==msg.bestmove)].slice(0,activeMultiPV);selectedCandidate=0;
+    if(top.score)renderEvaluation(top);else{currentEvaluation=null;$('eval-label').textContent='評価値未確定';$('eval-score').textContent='—';$('eval-bar').style.width='50%';}
+   }
+  }
+  renderCandidates();renderAnalysisHints();renderGuide('analysis');narrateEvaluation();if(candidates[0]){$('analysis-detail').textContent=`深さ ${candidates[0].depth||'—'} · ${Number(candidates[0].nodes||0).toLocaleString('ja-JP')}局面 · 実行 ${((performance.now()-analysisStarted)/1000).toFixed(1)}秒`;$('analysis-detail').title='実行時間には初回のAI起動・通信処理を含みます。深さ・局面数は採用した候補の探索情報です。';}
   if(candidates[0]){$('apply-best-btn').disabled=isAIturn();if(isAIturn()&&cursor===moves.length){const id=requestId;autoTimer=setTimeout(()=>{if(id===requestId&&isAIturn()&&candidates[0])commitMove(candidates[0].move);},450);}}
   else{$('eval-label').textContent='候補を取得できません';$('analysis-detail').textContent='再解析してください。';}
  }
 }
 function scoreNumber(info){if(!info?.score)return null;const s=info.score;if(typeof s.mate==='number')return Math.sign(s.mate||1)*30000;if(typeof s.cp==='number')return s.cp;if(s.type==='cp')return Number(s.value);if(s.type==='mate')return Math.sign(Number(s.value)||1)*30000;return null;}
-function scoreLabel(info,sente=false){if(!info?.score)return '—';let sign=sente&&state().turn===1?-1:1;const score=info.score;const mate=typeof score.mate==='number'?score.mate:score.type==='mate'?Number(score.value):null;if(mate!==null)return `${mate*sign<0?'−':''}詰 ${Math.abs(mate)}`;const n=scoreNumber(info)*sign;return `${n>0?'+':''}${n}`;}
-function renderEvaluation(info){const score=scoreNumber(info);if(score===null)return;const sente=score*(state().turn===0?1:-1);currentEvaluation=sente;const abs=Math.abs(sente);let label=abs<160?'互角':`${sideName(sente>0?0:1)}${abs<550?'やや有利':abs<1400?'優勢':'勝勢'}`;if(abs>=29000)label=`${sideName(sente>0?0:1)}に詰み筋`;
+function scoreLabel(info,sente=false){if(!info?.score)return '—';let sign=sente&&state().turn===1?-1:1;const score=info.score;const mate=typeof score.mate==='number'?score.mate:score.type==='mate'?Number(score.value):null;if(mate!==null)return `${mate*sign<0?'−':''}詰 ${Math.abs(mate)}`;const n=scoreNumber(info)*sign;const bound=score.bound;const symbol=bound==='lowerbound'?(sign>0?'≥':'≤'):bound==='upperbound'?(sign>0?'≤':'≥'):'';return `${symbol}${n>0?'+':''}${n}`;}
+function renderEvaluation(info){const score=scoreNumber(info);if(score===null)return;if(info.score?.bound){currentEvaluation=null;$('eval-label').textContent='評価を絞り込み中';$('eval-score').textContent=scoreLabel(info,true);$('eval-bar').style.width='50%';$('eval-detail').textContent='探索途中の評価範囲です。確定した形勢評価ではありません。';return;}const sente=score*(state().turn===0?1:-1);currentEvaluation=sente;const abs=Math.abs(sente);let label=abs<160?'互角':`${sideName(sente>0?0:1)}${abs<550?'やや有利':abs<1400?'優勢':'勝勢'}`;if(abs>=29000)label=`${sideName(sente>0?0:1)}に詰み筋`;
  $('eval-label').textContent=label;$('eval-score').textContent=scoreLabel(info,true);$('eval-bar').style.width=`${Math.max(3,Math.min(97,50+47*Math.tanh(sente/1300)))}%`;$('eval-detail').textContent='先手基準の評価値 · バーは形勢の目安（勝率ではありません）';
+}
+function renderAnalysisHints(){
+ const best=activeMove();for(const square of $('board').children)square.classList.toggle('recommended',settings.hints&&Number(square.dataset.index)===best?.to);drawArrow();
+}
+function narrate(text,options){if(!document.hidden)narrator?.speak(text,options);}
+function spokenEvaluation(){const score=candidates[0]?.score;const mate=!score?.bound&&typeof score?.mate==='number'?score.mate*(state().turn===0?1:-1):null;return evaluationNarration(currentEvaluation,{mateSente:mate});}
+function narrateEvaluation(){
+ const text=spokenEvaluation();
+ if(lastNarratedEvaluation===text)return;lastNarratedEvaluation=text;
+ narrate(text,{key:`eval-${positionRevision}-${requestId}`});
 }
 function renderCandidates(){
  const el=$('candidates');el.replaceChildren();const ready=candidates.some(Boolean);
@@ -136,22 +176,54 @@ function renderCandidates(){
  $('apply-best-btn').disabled=!active||thinking||isAIturn()||gameResult().over;
  const b=$('apply-best-btn');if(b){const text=b.querySelector('span');if(text)text.textContent=selectedCandidate?'選択した候補を指す':'推奨手を指す';}
 }
-function currentPlan(){return getAdaptivePlan({state:state(),history:states.slice(0,cursor+1),side:settings.side,preferred:settings.strategy,adaptive:settings.adaptive,cpSente:currentEvaluation});}
+function customSelection(){return settings.strategy.startsWith('custom:')?studio?.getSelected(settings.strategy.slice(7)):null;}
+function currentPlan(){
+ const custom=customSelection(),preferred=custom?.base||settings.strategy;
+ const plan=getAdaptivePlan({state:state(),history:states.slice(0,cursor+1),side:settings.side,preferred,adaptive:settings.adaptive,cpSente:currentEvaluation});
+ if(!custom)return plan;
+ const guide=getPlanGuide(custom,state());
+ if(settings.adaptive&&plan.changed)return {...plan,reason:`独自戦法「${custom.name}」の参考戦法から方針を調整しました。${plan.reason}`};
+ return {...plan,key:'custom:'+custom.id,name:custom.name,changed:false,isCustom:true,
+  reason:guide.matched?(guide.finished?'登録した手順の最後です。AI候補を比較し、独自戦法の研究室で続きを追加できます。':'登録した独自戦法の手順と一致しています。参考手とAI候補を比較してください。'):'登録した手順から分岐しています。現在の局面をAIで解析し、研究室で手順を更新できます。',
+  guideMove:guide.matched&&state().turn===settings.side?guide.move:null};
+}
+function renderStrategyEvents(){
+ const el=$('strategy-events');if(!el)return;el.replaceChildren();
+ if(!strategyEvents.length){el.textContent='戦法が変わると、手数と理由がここに記録されます。';return;}
+ for(const event of [...strategyEvents].reverse()){
+  const item=document.createElement('article');item.className='strategy-event';
+  const title=document.createElement('strong');title.textContent=`${event.ply}手目 · ${event.text}`;
+  const reason=document.createElement('p');reason.textContent=event.reason||'';item.append(title,reason);el.append(item);
+ }
+}
+function trackPlan(plan,source){
+ const banner=$('strategy-change-banner');
+ if(!lastPlan||['initial','history','side','reset'].includes(source)){
+  lastPlan={key:plan.key,name:plan.name};if(banner)banner.textContent=source==='history'?`${cursor}手目の方針：${plan.name}`:`設定した戦法：${plan.name}`;return;
+ }
+ if(!['analysis','position','selection','activation','adaptive'].includes(source))return;
+ const event=strategyTransition(lastPlan,plan,{ply:cursor,source});lastPlan={key:plan.key,name:plan.name};
+ if(!event)return;
+ strategyEvents=appendStrategyEvent(strategyEvents,event);renderStrategyEvents();persist();
+ if(banner){banner.textContent=`${event.ply}手目 · ${event.text}`;banner.title=event.reason;banner.classList.add('changed');}
+ narrate(event.text,{key:`strategy-${event.id}-${event.to}`});
+}
+
 function guideMove(){return currentPlan().guideMove;}
-function renderGuide(){const plan=currentPlan(),s=state(),guide=plan.guideMove;let text=plan.reason;if(s.turn!==settings.side)text=settings.mode==='play'?'AIが相手の指し手を考えています。着手後に、あなたの次の一手を解析します。':`${sideName(s.turn)}の指し手を盤上で入力すると、その局面での応手を再解析します。`;$('advice-text').textContent=text;$('advice-text').title=plan.opponent+'。'+plan.reason;$('active-strategy').textContent=plan.name;$('active-strategy').title=(settings.adaptive?'局面特徴による自動ガイド':'初期戦法を固定')+' · '+plan.opponent;
+function renderGuide(source='render'){const plan=currentPlan(),s=state(),guide=plan.guideMove;let text=plan.reason;if(s.turn!==settings.side)text=settings.mode==='play'?'AIが相手の指し手を考えています。着手後に、あなたの次の一手を解析します。':`${sideName(s.turn)}の指し手を盤上で入力すると、その局面での応手を再解析します。`;$('advice-text').textContent=text;$('advice-text').title=plan.opponent+'。'+plan.reason;$('active-strategy').textContent=plan.name;$('active-strategy').title=(settings.adaptive?'局面特徴による自動ガイド':'初期戦法を固定')+' · '+plan.opponent;trackPlan(plan,source);
  const castle=castles.find(c=>c.id===settings.castle);if($('castle-summary'))$('castle-summary').textContent=castle?`囲いの目標：${castle.name} — ${castle.text}${castle.caution?' 注意：'+castle.caution:''}`:'囲いは局面に合わせて検討します。';
  let button=$('guide-move-btn');if(!button){button=document.createElement('button');button.id='guide-move-btn';button.className='guide-button';button.type='button';$('advice-text').after(button);button.addEventListener('click',()=>{const m=guideMove();if(m)requestMove(m);});}button.hidden=!guide||gameResult().over;button.textContent=guide?`戦法の参考手 ${moveLabel(s,guide)} を指す`:'';
 }
-function fillStrategies(){const select=$('strategy-select');select.replaceChildren();const groups=new Map();for(const [key,value]of Object.entries(strategyData)){const category=value.category||'基本戦法';if(!groups.has(category)){const group=document.createElement('optgroup');group.label=category;groups.set(category,group);select.append(group);}const option=document.createElement('option');option.value=key;option.textContent=value.name;groups.get(category).append(option);}const castle=$('castle-select');if(castle){castle.replaceChildren();for(const c of [{id:'auto',name:'囲いは局面におまかせ'},...castles]){const o=document.createElement('option');o.value=c.id;o.textContent=c.name;castle.append(o);}castle.value=settings.castle;}renderCatalog();}
-function renderCatalog(){const el=$('strategy-catalog');if(!el)return;const q=($('strategy-search')?.value||'').trim().toLowerCase();el.replaceChildren();for(const [key,d]of Object.entries(strategyData)){if(q&&!`${d.name} ${d.category} ${d.text}`.toLowerCase().includes(q))continue;const card=document.createElement('article');card.className='catalog-card';const h=document.createElement('h3');h.textContent=d.name;const p=document.createElement('p');p.textContent=d.text;const small=document.createElement('small');small.textContent=`${d.category||'基本戦法'} · ${d.conditions||'局面に応じて選択'} ${d.caution||''}`;const b=document.createElement('button');b.type='button';b.textContent='この戦法を選ぶ';b.className='button button-outline';b.addEventListener('click',()=>{settings.strategy=key;$('strategy-select').value=key;persist();renderGuide();$('catalog-dialog').close();});card.append(h,p,small,b);el.append(card);}if(!el.children.length)el.textContent='一致する戦法がありません。';if($('strategy-count'))$('strategy-count').textContent=`${Object.keys(strategyData).length}の戦法・構想 / ${castles.length}の囲い`;}
+function fillStrategies(){const select=$('strategy-select');select.replaceChildren();const groups=new Map();for(const [key,value]of Object.entries(strategyData)){const category=value.category||'基本戦法';if(!groups.has(category)){const group=document.createElement('optgroup');group.label=category;groups.set(category,group);select.append(group);}const option=document.createElement('option');option.value=key;option.textContent=value.name;groups.get(category).append(option);}if(studio?.list().length){const group=document.createElement('optgroup');group.label='あなたの独自戦法';for(const p of studio.list()){const option=document.createElement('option');option.value='custom:'+p.id;option.textContent=p.name;group.append(option);}select.append(group);}select.value=settings.strategy;const castle=$('castle-select');if(castle){castle.replaceChildren();for(const c of [{id:'auto',name:'囲いは局面におまかせ'},...castles]){const o=document.createElement('option');o.value=c.id;o.textContent=c.name;castle.append(o);}castle.value=settings.castle;}renderCatalog();}
+function renderCatalog(){const el=$('strategy-catalog');if(!el)return;const q=($('strategy-search')?.value||'').trim().toLowerCase();el.replaceChildren();for(const [key,d]of Object.entries(strategyData)){if(q&&!`${d.name} ${d.category} ${d.text}`.toLowerCase().includes(q))continue;const card=document.createElement('article');card.className='catalog-card';const h=document.createElement('h3');h.textContent=d.name;const p=document.createElement('p');p.textContent=d.text;const small=document.createElement('small');small.textContent=`${d.category||'基本戦法'} · ${d.conditions||'局面に応じて選択'} ${d.caution||''}`;const b=document.createElement('button');b.type='button';b.textContent='この戦法を選ぶ';b.className='button button-outline';b.addEventListener('click',()=>{settings.strategy=key;$('strategy-select').value=key;persist();renderGuide('selection');$('catalog-dialog').close();});card.append(h,p,small,b);el.append(card);}if(!el.children.length)el.textContent='一致する戦法がありません。';if($('strategy-count'))$('strategy-count').textContent=`${Object.keys(strategyData).length}の戦法・構想 / ${castles.length}の囲い`;}
 async function copyText(text){try{await navigator.clipboard.writeText(text);toast('コピーしました。');}catch{const area=$('sfen-input');area.value=text;$('import-error').textContent='コピーできない場合は、この文字列を選択してコピーしてください。';$('tools-dialog').close();$('import-dialog').showModal();area.select();}}
-function reset(){archiveRecord(makeRecord(states,moves,cursor),'新規対局の前');clearTimeout(autoTimer);engineResults.clear();states=[initialState()];moves=[];cursor=0;selected=null;flipped=settings.side===1;persist();refreshPosition();}
+function reset(){narrator?.stop();strategyEvents=[];lastPlan=null;renderStrategyEvents();archiveRecord(makeRecord(states,moves,cursor),'新規対局の前');clearTimeout(autoTimer);engineResults.clear();states=[initialState()];moves=[];cursor=0;selected=null;flipped=settings.side===1;persist();refreshPosition('reset');}
 function bind(){
  fillStrategies();
  $('adaptive-strategy').checked=settings.adaptive;$('hint-toggle').checked=settings.hints;$('confirm-move').checked=settings.confirm;
  $('side-select').value=settings.side;$('strategy-select').value=settings.strategy;$('mode-select').value=settings.mode;$('time-select').value=settings.time;
- $('side-select').addEventListener('change',e=>{settings.side=Number(e.target.value);flipped=settings.side===1;persist();refreshPosition();});
- $('strategy-select').addEventListener('change',e=>{settings.strategy=e.target.value;persist();renderGuide();toast('戦法は序盤の参考手に反映されます。AI候補は探索の推奨順です。');});
+ $('side-select').addEventListener('change',e=>{settings.side=Number(e.target.value);flipped=settings.side===1;narrator?.stop();persist();refreshPosition('side');});
+ $('strategy-select').addEventListener('change',e=>{settings.strategy=e.target.value;persist();renderGuide('selection');toast('戦法を設定しました。AIは現在の局面を独立に解析します。');});
  $('mode-select').addEventListener('change',e=>{settings.mode=e.target.value;persist();refreshPosition();});
  $('time-select').addEventListener('change',e=>{settings.time=Number(e.target.value);persist();startAnalysis();});
  $('new-game').addEventListener('click',()=>{$('reset-dialog').showModal();});$('reset-confirm').addEventListener('click',()=>{$('reset-dialog').close();reset();});$('reset-cancel').addEventListener('click',()=>$('reset-dialog').close());
@@ -164,15 +236,15 @@ function bind(){
  $('promotion-dialog').addEventListener('cancel',()=>{pendingPromotion=null;});
  $('help-btn').addEventListener('click',()=>$('help-dialog').showModal());$('close-help').addEventListener('click',()=>$('help-dialog').close());
  $('import-btn').addEventListener('click',()=>{$('sfen-input').value='';$('import-error').textContent='';$('import-dialog').showModal();});$('import-cancel').addEventListener('click',()=>$('import-dialog').close());
- $('import-confirm').addEventListener('click',()=>{try{const loaded=decodeGame($('sfen-input').value);archiveRecord(makeRecord(states,moves,cursor),'読込前の棋譜');states=loaded.states;moves=loaded.moves;cursor=loaded.cursor;selected=null;$('import-dialog').close();persist();refreshPosition();toast('局面・棋譜を読み込みました。');}catch(e){$('import-error').textContent=`読み込めません：${e.message}`;}});
+ $('import-confirm').addEventListener('click',()=>{try{const loaded=decodeGame($('sfen-input').value);narrator?.stop();archiveRecord(makeRecord(states,moves,cursor),'読込前の棋譜');states=loaded.states;moves=loaded.moves;cursor=loaded.cursor;selected=null;$('import-dialog').close();persist();refreshPosition();toast('局面・棋譜を読み込みました。');}catch(e){$('import-error').textContent=`読み込めません：${e.message}`;}});
  const file=document.createElement('input');file.type='file';file.accept='.json,.sfen,.txt';file.id='import-file';file.className='import-file';file.setAttribute('aria-label','棋譜ファイルを選ぶ');$('sfen-input').before(file);file.addEventListener('change',async()=>{const f=file.files[0];if(!f)return;if(f.size>1024*1024){toast('棋譜ファイルは1MB以下にしてください。');return;}$('sfen-input').value=await f.text();});
  $('export-btn').addEventListener('click',()=>{const data=makeRecord(states,moves,cursor);const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`shogi-meijin-${new Date().toISOString().slice(0,10)}-${cursor}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('棋譜を保存しました。読込から続きを再開できます。');});
- $('adaptive-strategy').addEventListener('change',e=>{settings.adaptive=e.target.checked;persist();renderGuide();});
+ $('adaptive-strategy').addEventListener('change',e=>{settings.adaptive=e.target.checked;persist();renderGuide('adaptive');});
  $('hint-toggle').addEventListener('change',e=>{settings.hints=e.target.checked;persist();renderBoard();});
  $('confirm-move').addEventListener('change',e=>{settings.confirm=e.target.checked;persist();});
  $('confirm-move-yes').addEventListener('click',()=>{const pending=pendingRequested;$('move-confirm-dialog').close();if(pending?.key===positionKey(state())){const m=moveFromUSI(state(),pending.usi);if(m)commitMove(m);}else toast('局面が変わったため、もう一度選んでください。');pendingRequested=null;});
  $('confirm-move-cancel').addEventListener('click',()=>{pendingRequested=null;$('move-confirm-dialog').close();});
- $('tools-btn').addEventListener('click',()=>{renderBranches();$('history-jump').value=String(cursor);$('history-jump-error').textContent='';$('tools-dialog').showModal();});$('close-tools').addEventListener('click',()=>$('tools-dialog').close());
+ $('tools-btn').addEventListener('click',()=>{renderBranches();renderStrategyEvents();$('history-jump').value=String(cursor);$('history-jump-error').textContent='';$('tools-dialog').showModal();});$('close-tools').addEventListener('click',()=>$('tools-dialog').close());
  $('history-first').addEventListener('click',()=>goTo(0));$('redo-btn').addEventListener('click',()=>goTo(cursor+1));
  $('history-jump-btn').addEventListener('click',()=>{const raw=$('history-jump').value.trim(),n=Number(raw);if(!raw||!Number.isInteger(n)||n<0||n>moves.length){$('history-jump-error').textContent=`0〜${moves.length}手目を整数で入力してください。`;return;}$('history-jump-error').textContent='';$('tools-dialog').close();goTo(n);});
  $('copy-sfen-btn').addEventListener('click',()=>copyText(toSFEN(state())));$('copy-usi-btn').addEventListener('click',()=>copyText('position sfen '+toSFEN(states[0])+(cursor?' moves '+moves.slice(0,cursor).map(moveToUSI).join(' '):'')));
@@ -180,4 +252,46 @@ function bind(){
  $('catalog-btn')?.addEventListener('click',()=>{$('tools-dialog').close();renderCatalog();$('catalog-dialog').showModal();});$('close-catalog')?.addEventListener('click',()=>$('catalog-dialog').close());$('strategy-search')?.addEventListener('input',renderCatalog);$('castle-select')?.addEventListener('change',e=>{settings.castle=e.target.value;persist();renderGuide();});
  document.addEventListener('keydown',e=>{if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)||document.querySelector('dialog[open]'))return;if(e.key==='ArrowLeft'){e.preventDefault();goTo(cursor-1);}if(e.key==='ArrowRight'){e.preventDefault();goTo(cursor+1);}if(e.key==='Escape'){selected=null;renderBoard();}});
 }
-restore();bind();createEngine();refreshPosition();
+restore();initializeExtensions();bind();bindExtensions();createEngine();refreshPosition('initial');
+
+function initializeExtensions(){
+ settings.analysisVersion=3;
+ studio=mountStrategyStudio({
+  getCurrent:()=>({initialSfen:toSFEN(states[0]),moves:moves.map(moveToUSI),cursor,side:settings.side,base:customSelection()?.base||settings.strategy}),
+  onActivate:(record,plan)=>{
+   const loaded=decodeGame(record);archiveRecord(makeRecord(states,moves,cursor),'独自戦法を適用する前');narrator?.stop();
+   states=loaded.states;moves=loaded.moves;cursor=loaded.cursor;settings.side=plan.side;settings.strategy='custom:'+plan.id;settings.mode='study';flipped=settings.side===1;selected=null;
+   fillStrategies();$('side-select').value=String(settings.side);$('mode-select').value='study';persist();refreshPosition('activation');toast(`独自戦法「${plan.name}」を盤面に適用しました。`);
+  },
+  onChange:()=>{if(!studio)return;if(settings.strategy.startsWith('custom:')&&!customSelection())settings.strategy='auto';fillStrategies();persist();renderGuide('selection');},
+  onStatus:()=>{}
+ });
+ if(settings.strategy.startsWith('custom:')&&!customSelection())settings.strategy='auto';
+ narrator=createNarrator({
+  onStatus:status=>{
+   const button=$('narration-toggle');if(button){button.setAttribute('aria-pressed',String(status.enabled));button.title=status.text;const label=button.querySelector('span');if(label)label.textContent=status.enabled?'音声 ON':'音声 OFF';else button.textContent=status.enabled?'音声 ON':'音声 OFF';button.disabled=!status.supported;}
+   if($('narration-enabled')){$('narration-enabled').checked=status.enabled;$('narration-enabled').disabled=!status.supported;}
+   if($('narration-status'))$('narration-status').textContent=status.text;
+  },
+  onTranscript:text=>{if($('narration-transcript')){$('narration-transcript').textContent=text;$('narration-transcript').title=text;}},
+  onVoices:voices=>{const select=$('narration-voice');if(!select)return;select.replaceChildren();const auto=document.createElement('option');auto.value='';auto.textContent='日本語音声を自動選択';select.append(auto);for(const voice of voices){const option=document.createElement('option');option.value=voice.voiceURI;option.textContent=voice.name;select.append(option);}select.value=voices.some(v=>v.voiceURI===settings.voiceURI)?settings.voiceURI:'';}
+ });
+ narrator.configure({voiceURI:settings.voiceURI,rate:settings.speechRate,volume:1});
+}
+function bindExtensions(){
+ $('engine-profile').value=settings.multiPV===1?'focused':'compare';$('engine-hash').value=String(settings.hashMB);$('narration-rate').value=String(settings.speechRate);
+ $('engine-profile').addEventListener('change',e=>{settings.multiPV=e.target.value==='compare'?3:1;persist();startAnalysis();});
+ $('engine-hash').addEventListener('change',e=>{settings.hashMB=normalizeEngineConfig({hashMB:e.target.value}).hashMB;persist();startAnalysis();});
+ $('quick-analysis-btn').addEventListener('click',()=>{settings.time=1000;settings.multiPV=1;$('time-select').value='1000';$('engine-profile').value='focused';persist();if(engineFailed)createEngine();startAnalysis();});
+ $('deep-analysis-btn').addEventListener('click',()=>{$('tools-dialog').close();if(engineFailed)createEngine();startAnalysis(60000);});
+ function enableNarration(enabled){narrator.setEnabled(enabled);if(enabled)readCurrentPosition();}
+ function readCurrentPosition(){const p=currentPlan(),lastMove=cursor?moveNarration(states[cursor-1],moves[cursor-1],cursor):'初期局面です。';narrator.speak(`${lastMove}現在の方針は、${p.name}。${spokenEvaluation()}`,{key:'read-'+Date.now(),priority:'high'});}
+ $('narration-toggle').addEventListener('click',()=>enableNarration(!narrator.enabled));
+ $('narration-enabled').addEventListener('change',e=>enableNarration(e.target.checked));
+ $('narration-voice').addEventListener('change',e=>{settings.voiceURI=e.target.value;narrator.configure({voiceURI:settings.voiceURI});persist();});
+ $('narration-rate').addEventListener('input',e=>{settings.speechRate=Number(e.target.value);narrator.configure({rate:settings.speechRate});persist();});
+ $('narration-read-btn').addEventListener('click',()=>{narrator.setEnabled(true);readCurrentPosition();});
+ $('narration-stop-btn').addEventListener('click',()=>narrator.stop());
+ document.addEventListener('visibilitychange',()=>{if(document.hidden)narrator.stop();});
+ renderStrategyEvents();
+}

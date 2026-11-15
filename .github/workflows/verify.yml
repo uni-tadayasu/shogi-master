@@ -16,6 +16,15 @@ jobs:
           node --check shogi.js
           node --check strategy.js
           node --check game-record.js
+          node --check engine-config.js
+          node --check engine-analysis.js
+          node --check analysis-confidence.js
+          node --check strategy-events.js
+          node --check custom-strategies.js
+          node --check strategy-studio.js
+          node --check narration.js
+          node --check engine-vendor/core-worker.js
+          node --check engine-vendor/engine-worker.js
       - name: Verify shogi rules and study features
         run: node --test tests/*.test.mjs
       - name: Verify local NNUE engine
