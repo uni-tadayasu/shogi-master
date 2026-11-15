@@ -47,3 +47,97 @@
 .studio-winrate{margin:11px 0 12px;padding:11px 12px;background:#ffffff78;border:1px solid #ddd0a9;border-radius:7px}.studio-winrate>strong{display:block;color:#526e5b;font-size:12px;font-weight:600;margin-bottom:7px;font-variant-numeric:tabular-nums}.studio-winrate-track{height:8px;border-radius:20px;overflow:hidden;background:#c4cec5;border:1px solid #b7bca66b}.studio-winrate-track>span{display:block;height:100%;border-radius:20px;background:linear-gradient(90deg,#a18440,#ddc274);transition:width .25s}.studio-winrate .studio-help{font-size:10px;line-height:1.7;color:#8d8d71;margin:7px 0 0}
 @media(max-width:700px){.studio-winrate{padding:10px;margin:9px 0}.studio-winrate>strong{font-size:11px}.studio-winrate-track{height:7px}.studio-winrate .studio-help{font-size:10px}}
 @media(max-width:400px){.studio-field-grid{grid-template-columns:minmax(0,1fr)}}
+
+/* Mobile board desk: a fixed viewport with separate, scrollable tool views. */
+.mobile-nav{display:none}
+@media(max-width:700px),(max-width:1000px) and (max-height:500px){
+ html{height:100%;overflow:hidden;scrollbar-gutter:auto;overscroll-behavior:none;touch-action:pan-x pan-y;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+ body{--mobile-header:44px;--mobile-nav:48px;position:fixed;inset:0;width:100%;height:100vh;height:100dvh;overflow:hidden;overscroll-behavior:none;touch-action:pan-x pan-y;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+ input,textarea,[contenteditable=true]{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+ .site-header{height:calc(var(--mobile-header) + env(safe-area-inset-top));padding:env(safe-area-inset-top) max(8px,env(safe-area-inset-right)) 0 max(8px,env(safe-area-inset-left));gap:6px;box-shadow:0 2px 8px #0d26361a}
+ .brand{gap:6px}.brand img{width:23px;height:27px}.brand-wordmark{font-size:18px;letter-spacing:.08em}.brand-wordmark>span{font-size:6px;letter-spacing:.2em;margin-top:1px}
+ .header-center,.local-badge{display:none}.header-actions{gap:0}.header-actions .icon-button{width:31px;height:36px}.header-actions .icon{width:16px;height:16px}
+ .page-shell{width:100%;height:calc(100% - var(--mobile-header) - env(safe-area-inset-top));margin:0;padding:3px max(4px,env(safe-area-inset-right)) 0 max(4px,env(safe-area-inset-left));display:flex;flex-direction:column;min-height:0;overflow:hidden}
+ .page-intro,.site-footer{display:none}
+ .workspace{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:30px minmax(0,1fr) 58px;gap:4px;flex:1;min-height:0;width:100%;overflow:hidden;align-items:stretch}
+ .setup-panel,.insight-panel{display:contents}
+ .setup-panel>.panel-heading,.settings-grid,.study-shortcuts,.strategy-note,.new-game-button,.setup-footer,.advice-panel,.history-panel{display:none}
+ .evaluation-panel{display:grid;grid-column:1;grid-row:1;width:100%;padding:3px 8px;margin:0;border-radius:6px;grid-template-columns:minmax(0,1fr) auto;column-gap:8px;align-content:center;min-height:0}
+ .evaluation-heading,.evaluation-detail{display:none}.evaluation-main{grid-column:1;grid-row:1;justify-content:flex-start;gap:10px;margin:0;min-width:0}.evaluation-main strong{font:600 11px/1.3 var(--sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.evaluation-main>span{font-size:16px}.evaluation-scale{grid-column:2;grid-row:1;gap:9px;align-items:center;font-size:8px;margin:0}.evaluation-track{grid-column:1/-1;height:3px;margin-top:3px}
+ .board-panel{container-type:size;display:flex;flex-direction:column;justify-content:center;grid-column:1;grid-row:2;min-height:0;width:100%;overflow:visible;gap:1px}
+ .board-heading{display:none}.player-row{flex:0 0 24px;min-height:24px;height:24px;gap:5px;margin:0;padding:0 2px}.player-identity{font-size:9px;gap:4px}.player-stone{width:17px;height:17px;font-size:10px}.hand-host{min-width:0}.hand{min-height:24px;max-height:24px;gap:1px;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;touch-action:pan-x pan-y}.hand-empty{font-size:9px;white-space:nowrap}.hand-piece{height:24px;min-width:25px;padding:1px;gap:1px;flex-shrink:0}.hand-symbol{font-size:15px;padding:1px 3px}.hand-piece small{font-size:9px}
+ .board-panel .board-outer{width:min(calc(100vw - 20px),calc(100vh - 255px));width:min(calc(100cqw - 12px),calc(100cqh - 94px));min-width:0;max-width:none;flex:0 0 auto;margin:0 auto}
+ .board-panel .file-coordinates{height:12px;padding:0 3px;font-size:9px}.board-panel .board-wrap{padding:3px;border-radius:2px;box-shadow:0 2px 0 #a07940,0 4px 0 #c3a26b,0 6px 12px #6c4d2520}.board-panel .board-wrap:before{inset:1px}.board-panel .arrow-layer{left:3px;top:3px;width:calc(100% - 6px);height:calc(100% - 6px)}.board-panel .rank-coordinates{left:calc(100% + 2px);top:4px;bottom:4px;width:10px;font-size:9px}.board-panel .piece{font-size:clamp(15px,7.6cqw,42px)}.board-panel .piece.multi-character{font-size:clamp(12px,5.6cqw,30px)}
+ .board,.square,.piece{touch-action:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+ .board-toolbar{flex:0 0 30px;min-height:30px;margin:3px 0 0;padding:1px 2px 0;gap:4px}.turn-indicator{font-size:10px;gap:4px}.board-tools{gap:3px}.text-button{font-size:10px;min-height:29px;padding:3px;gap:3px}.text-button .icon{width:13px;height:13px}
+ .recommendation-panel{display:grid;grid-column:1;grid-row:3;grid-template-columns:minmax(0,1fr) 117px;grid-template-rows:16px minmax(0,1fr);column-gap:5px;width:100%;min-height:0;margin:0;padding:4px 6px;border-radius:6px;align-items:center}
+ .recommendation-panel .panel-heading{grid-column:1;grid-row:1;margin:0}.recommendation-panel .panel-heading h2{font-size:9px;gap:4px}.recommendation-panel .panel-heading .icon{width:12px;height:12px}.recommendation-panel .section-no{display:none}
+ .candidates{grid-column:1;grid-row:2;display:flex;gap:4px;height:30px;min-height:30px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;padding:0;align-items:center;touch-action:pan-x pan-y}.candidate{flex:0 0 100%;height:30px;min-height:30px;padding:3px 5px;gap:4px;scroll-snap-align:start;border-radius:4px;white-space:nowrap}.candidate-rank{font-size:8px;min-width:9px}.candidate-move{font-size:16px}.candidate-score{font-size:10px}.candidate-depth{font-size:8px}.candidate-empty,.analysis-empty{flex:0 0 100%;height:30px;padding:0;font-size:10px;justify-content:flex-start;white-space:nowrap;overflow:hidden}.thinking-orbit{width:11px;height:11px}
+ .analysis-actions{grid-column:2;grid-row:1/3;margin:0;gap:4px;align-self:stretch;align-items:center}.analysis-actions>.button-primary{font-size:10px;padding:6px 4px;min-height:40px;gap:3px}.analysis-actions>.button-primary .icon{width:11px;height:11px}.analysis-actions .button-icon{width:28px;min-height:40px;padding:5px}.analysis-actions .button-icon .icon{width:14px;height:14px}.reading-line,.analysis-meta{display:none}
+ .mobile-nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));flex:0 0 calc(var(--mobile-nav) + env(safe-area-inset-bottom));min-height:calc(var(--mobile-nav) + env(safe-area-inset-bottom));gap:3px;margin-top:4px;padding:3px 1px calc(3px + env(safe-area-inset-bottom));border-top:1px solid #d5c8a9;background:linear-gradient(0deg,#eee5cf,#f9f5ea);z-index:2}
+ .mobile-nav button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-width:0;min-height:38px;padding:3px 1px;border:1px solid transparent;border-radius:6px;background:transparent;color:#63786a;font-size:10px;line-height:1.3;white-space:nowrap}
+ .mobile-nav button .icon{width:17px;height:17px}.mobile-nav button[aria-pressed=true]{border-color:#bda566;background:linear-gradient(115deg,#1a3c4b,#2c514f);color:#f6e4b6;box-shadow:0 2px 5px #213e441c}.mobile-nav #mobile-studio-btn{background:#eaddb9;border-color:#d2bd88;color:#725d2e}
+ body[data-mobile-view=setup] .workspace,body[data-mobile-view=analysis] .workspace,body[data-mobile-view=history] .workspace{display:block;overflow:hidden}
+ body[data-mobile-view=setup] .board-panel,body[data-mobile-view=analysis] .board-panel,body[data-mobile-view=history] .board-panel{display:none}
+ body[data-mobile-view=setup] .insight-panel{display:none}
+ body[data-mobile-view=setup] .setup-panel{display:block;width:100%;height:100%;min-height:0;padding:15px 12px;overflow:auto;overscroll-behavior:contain;touch-action:pan-x pan-y;border-radius:8px}
+ body[data-mobile-view=setup] .setup-panel>.panel-heading{display:flex;margin-bottom:14px}
+ body[data-mobile-view=setup] .settings-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:15px 10px}
+ body[data-mobile-view=setup] .settings-grid .field:nth-child(3){grid-column:1/-1;grid-row:auto}
+ body[data-mobile-view=setup] .field{gap:6px}body[data-mobile-view=setup] .field>span{font-size:12px}body[data-mobile-view=setup] .field select{font-size:16px;min-height:44px;padding:8px 26px 8px 9px}
+ body[data-mobile-view=setup] .study-shortcuts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:18px 0}.shortcut-gold{grid-column:auto}
+ body[data-mobile-view=setup] .shortcut-button{min-height:44px;font-size:11px;gap:5px}body[data-mobile-view=setup] .shortcut-button .icon{width:16px;height:16px}
+ body[data-mobile-view=setup] .strategy-note{display:flex;margin-top:15px;padding-top:15px}body[data-mobile-view=setup] .strategy-note h3{font-size:12px}body[data-mobile-view=setup] .strategy-note p{font-size:12px;line-height:1.8}
+ body[data-mobile-view=setup] .new-game-button{display:flex;width:100%;margin:18px 0 0;min-height:44px;font-size:12px}
+ body[data-mobile-view=setup] .setup-footer{display:block;margin-top:18px}body[data-mobile-view=setup] .setup-footer p{font-size:11px}
+ body[data-mobile-view=analysis] .insight-panel{display:flex;flex-direction:column;gap:12px;width:100%;height:100%;padding:8px 5px 15px;overflow:auto;overscroll-behavior:contain;touch-action:pan-x pan-y}
+ body[data-mobile-view=analysis] .evaluation-panel{display:block;flex:0 0 auto;padding:14px;border-radius:9px}
+ body[data-mobile-view=analysis] .evaluation-heading{display:flex}body[data-mobile-view=analysis] .evaluation-main{display:flex;justify-content:space-between;margin:10px 0 8px}body[data-mobile-view=analysis] .evaluation-main strong{font-size:17px}body[data-mobile-view=analysis] .evaluation-main>span{font-size:25px}body[data-mobile-view=analysis] .evaluation-scale{display:flex;font-size:10px;margin:5px 0}body[data-mobile-view=analysis] .evaluation-track{height:6px}body[data-mobile-view=analysis] .evaluation-detail{display:block;font-size:10px;margin-top:8px}
+ body[data-mobile-view=analysis] .recommendation-panel{display:block;flex:0 0 auto;padding:13px;border-radius:9px}body[data-mobile-view=analysis] .recommendation-panel .panel-heading{margin-bottom:8px}body[data-mobile-view=analysis] .recommendation-panel .panel-heading h2{font-size:12px}
+ body[data-mobile-view=analysis] .candidates{display:flex;flex-direction:column;align-items:stretch;height:auto;min-height:39px;overflow:visible;gap:6px;padding:0}
+ body[data-mobile-view=analysis] .candidate{flex:0 0 auto;height:39px;min-height:39px;padding:7px 9px}body[data-mobile-view=analysis] .candidate-move{font-size:19px}body[data-mobile-view=analysis] .candidate-depth{display:block;font-size:10px}body[data-mobile-view=analysis] .candidate-score{font-size:12px}body[data-mobile-view=analysis] .analysis-empty,body[data-mobile-view=analysis] .candidate-empty{min-height:39px}
+ body[data-mobile-view=analysis] .reading-line{display:flex;margin-top:10px}body[data-mobile-view=analysis] .reading-line>span{font-size:10px}body[data-mobile-view=analysis] .reading-line p{font-size:12px;white-space:normal;overflow-wrap:anywhere}
+ body[data-mobile-view=analysis] .analysis-meta{display:block;white-space:normal;font-size:10px;margin-top:7px}body[data-mobile-view=analysis] .analysis-actions{display:flex;margin-top:12px;gap:7px}body[data-mobile-view=analysis] .analysis-actions>.button-primary{min-height:44px;font-size:12px}body[data-mobile-view=analysis] .analysis-actions .button-icon{width:44px;min-height:44px}
+ body[data-mobile-view=analysis] .advice-panel{display:flex;flex:0 0 auto;padding:6px;gap:8px}body[data-mobile-view=analysis] .advice-heading{flex-wrap:wrap;gap:8px}body[data-mobile-view=analysis] .advice-heading h2{max-width:none;font-size:13px;white-space:normal}body[data-mobile-view=analysis] .adaptive-control{font-size:10px;min-height:32px}body[data-mobile-view=analysis] .adaptive-control input{width:16px;height:16px}
+ body[data-mobile-view=analysis] .advice-panel #advice-text{display:block;font-size:12px;line-height:1.8}body[data-mobile-view=analysis] .strategy-change-banner{font-size:12px!important;max-height:none;padding:8px;margin:7px 0;overflow:visible}body[data-mobile-view=analysis] .guide-button{font-size:12px;padding:8px 10px;min-height:40px}
+ body[data-mobile-view=history] .insight-panel{display:block;height:100%;min-height:0;width:100%}
+ body[data-mobile-view=history] .evaluation-panel,body[data-mobile-view=history] .recommendation-panel{display:none}
+ body[data-mobile-view=history] .history-panel{display:flex;flex-direction:column;width:100%;height:100%;margin:0;padding:13px 10px;border-radius:8px;min-height:0;overflow:hidden}
+ body[data-mobile-view=history] .history-panel .panel-heading{flex:0 0 auto;margin-bottom:9px}body[data-mobile-view=history] .history-panel .panel-heading h2{font-size:12px}body[data-mobile-view=history] .tiny-button{width:33px;height:36px}body[data-mobile-view=history] .tiny-button .icon{width:17px;height:17px}
+ body[data-mobile-view=history] .narration-transcript{display:block;flex:0 0 auto;max-height:70px;font-size:11px!important;line-height:1.7;white-space:normal;margin-bottom:8px}
+ body[data-mobile-view=history] .history-list{display:flex;flex:1;align-content:flex-start;min-height:0;max-height:none;flex-wrap:wrap;gap:6px;overflow:auto;overscroll-behavior:contain;touch-action:pan-x pan-y}
+ body[data-mobile-view=history] .history-item{font-size:12px;min-height:39px;padding:7px 9px}body[data-mobile-view=history] .history-item small{font-size:10px}body[data-mobile-view=history] .history-empty{font-size:12px;white-space:normal}
+ .modal{width:calc(100% - 12px);max-height:calc(100dvh - 16px);margin:auto;padding:25px 14px 18px;border-radius:10px;overflow:auto;overscroll-behavior:contain;touch-action:pan-x pan-y}
+ .modal .field input:not([type=checkbox]):not([type=range]),.modal .field select,.modal .field textarea,.modal #studio-sfen,.modal #studio-moves{font-size:16px;min-height:42px}
+ .modal .button{min-height:42px}.modal .dialog-close{width:36px;height:36px;top:5px;right:5px}.toast{bottom:calc(var(--mobile-nav) + env(safe-area-inset-bottom) + 9px);max-width:calc(100% - 20px);font-size:11px;padding:9px 12px}
+}
+@media(max-width:350px){
+ body{--mobile-header:41px;--mobile-nav:45px}.header-actions .icon-button{width:28px}.brand-wordmark{font-size:16px}.brand img{width:21px;height:25px}.mobile-nav button{font-size:9px;min-height:35px}.mobile-nav button .icon{width:16px;height:16px}.recommendation-panel{grid-template-columns:minmax(0,1fr) 111px}.candidate-depth{display:none}
+}
+@media(max-width:1000px) and (max-height:500px) and (orientation:landscape){
+ body{--mobile-header:36px;--mobile-nav:42px}.site-header .brand img{width:20px;height:24px}.brand-wordmark{font-size:16px}.brand-wordmark>span{display:none}.header-actions .icon-button{height:31px;width:32px}.mobile-nav{padding-top:2px;padding-bottom:calc(2px + env(safe-area-inset-bottom))}.mobile-nav button{flex-direction:row;gap:6px;min-height:33px;font-size:11px}
+ .workspace{grid-template-columns:minmax(0,1.12fr) minmax(240px,1fr);grid-template-rows:25px 30px 25px minmax(58px,1fr) 30px;gap:4px}
+ .board-panel{display:contents;container-type:normal}
+ .board-panel .board-outer{grid-column:1;grid-row:1/-1;align-self:center;width:min(calc(52vw - 16px),calc(100dvh - 97px - env(safe-area-inset-top) - env(safe-area-inset-bottom)));margin:auto}
+ .player-row-top{grid-column:2;grid-row:1}.player-row-bottom{grid-column:2;grid-row:3}.board-toolbar{grid-column:2;grid-row:5;margin:0;align-self:end}.evaluation-panel{grid-column:2;grid-row:2}.recommendation-panel{grid-column:2;grid-row:4;align-self:center;min-height:58px}
+ .modal{max-height:calc(100dvh - 10px)}
+}
+/* Keep strategy changes visible even while the board occupies the main view. */
+@media(max-width:700px),(max-width:1000px) and (max-height:500px){
+ body[data-mobile-view=board] .workspace{grid-template-rows:30px 22px minmax(0,1fr) 58px;row-gap:3px}
+ body[data-mobile-view=board] .board-panel{grid-row:3}
+ body[data-mobile-view=board] .recommendation-panel{grid-row:4}
+ body[data-mobile-view=board] .advice-panel{display:flex;grid-column:1;grid-row:2;align-items:center;min-width:0;width:100%;height:22px;padding:0 5px;gap:5px;overflow:hidden}
+ body[data-mobile-view=board] .advice-mark{padding:0;flex:0 0 auto}body[data-mobile-view=board] .advice-mark .icon{width:13px;height:13px}
+ body[data-mobile-view=board] .advice-content{min-width:0;overflow:hidden}body[data-mobile-view=board] .advice-heading{margin:0;min-width:0}body[data-mobile-view=board] .advice-heading h2{max-width:100%;font-size:10px;line-height:20px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ body[data-mobile-view=board] .adaptive-control,body[data-mobile-view=board] #advice-text,body[data-mobile-view=board] .guide-button{display:none}
+ body[data-mobile-view=board] .strategy-change-banner{margin:0;padding:1px 5px;max-height:21px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px!important;line-height:19px!important;border-left-width:2px}
+ body[data-mobile-view=board] .advice-content:has(.strategy-change-banner:not(:empty)) .advice-heading{display:none}
+}
+@media(max-width:1000px) and (max-height:500px) and (orientation:landscape){
+ body[data-mobile-view=board] .workspace{grid-template-rows:25px 30px 22px 25px minmax(58px,1fr) 30px;row-gap:3px}
+ body[data-mobile-view=board] .advice-panel{grid-column:2;grid-row:3}
+ body[data-mobile-view=board] .player-row-bottom{grid-row:4}
+ body[data-mobile-view=board] .recommendation-panel{grid-row:5}
+ body[data-mobile-view=board] .board-toolbar{grid-row:6}
+}
