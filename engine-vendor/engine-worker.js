@@ -17,13 +17,15 @@ function startCore() {
         ready=true;
         emit(data);
         sendPending();
-      } else if (data.type==='info' || data.type==='done') {
+      } else if (data.type==='info' || data.type==='done' || data.type==='configured') {
         if (data.id !== activeId) return;
         emit(data);
         if (data.type==='done') { busy=false; activeId=null; sendPending(); }
+      } else if (data.type==='diagnostic') {
+        if(data.id==null||data.id===activeId)emit(data);
       } else if (data.type==='error') {
         busy=false; activeId=null;
-        if (!ready) { core.terminate(); core=null; generation++; pending=null; }
+        core.terminate(); core=null; generation++; ready=false; pending=null;
         emit(data);
       }
     };
